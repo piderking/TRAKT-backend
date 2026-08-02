@@ -1,0 +1,196 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #07090e;
+  color: #f3f4f6;
+  font-family: 'Inter', sans-serif;
+  padding: 2.5rem;
+  min-height: 100vh;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: #1f2937;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #ef4444;
+}
+
+.health-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.health-header {
+  border-bottom: 1px solid #1f2937;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #11141c;
+  border: 1px solid #374151;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #ef4444;
+  margin-bottom: 12px;
+}
+
+.heart-pulse {
+  color: #ef4444;
+  animation: heart-beat 1.2s infinite;
+}
+
+@keyframes heart-beat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.25); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.vital-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.vital-card {
+  background-color: #11141c;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-red { border-left: 4px solid #ef4444; }
+.card-emerald { border-left: 4px solid #10b981; }
+.card-amber { border-left: 4px solid #f59e0b; }
+.card-purple { border-left: 4px solid #8b5cf6; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.card-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.main-val {
+  font-size: 2.25rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: #ffffff;
+}
+
+.unit {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.card-sub {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: #1f2937;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+.sync-panel {
+  background-color: #11141c;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.sync-panel h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.sync-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sync-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #191d28;
+  border: 1px solid #262d3d;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+}
+
+.sync-device {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.sync-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+}

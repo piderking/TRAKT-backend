@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health & Biometrics Telemetry UI</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="health-container">
+    <header class="health-header">
+      <div class="pill-badge">
+        <span class="heart-pulse">♥</span>
+        <span>ANDROID HEALTH CONNECT TELEMETRY</span>
+      </div>
+      <h1>Biometrics & Vital Scrobbler</h1>
+      <p class="subtitle">Real-time health telemetry synced directly to <code>TRAKT-backend</code></p>
+    </header>
+
+    <div class="vital-grid">
+      <!-- Heart Rate Monitor Card -->
+      <div class="vital-card card-red">
+        <div class="card-header">
+          <span class="card-title">HEART RATE</span>
+          <span class="pulse-icon">♥</span>
+        </div>
+        <div class="card-value-row">
+          <span id="bpm-val" class="main-val">--</span>
+          <span class="unit">BPM</span>
+        </div>
+        <div id="bpm-sub" class="card-sub">Resting: -- BPM</div>
+      </div>
+
+      <!-- Step Counter Card -->
+      <div class="vital-card card-emerald">
+        <div class="card-header">
+          <span class="card-title">DAILY STEPS</span>
+          <span class="icon">👟</span>
+        </div>
+        <div class="card-value-row">
+          <span id="steps-val" class="main-val">--</span>
+          <span class="unit">steps</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div id="steps-bar" class="progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Active Calories Card -->
+      <div class="vital-card card-amber">
+        <div class="card-header">
+          <span class="card-title">ACTIVE CALORIES</span>
+          <span class="icon">🔥</span>
+        </div>
+        <div class="card-value-row">
+          <span id="cal-val" class="main-val">--</span>
+          <span class="unit">kcal</span>
+        </div>
+        <div class="card-sub">Target: 500 kcal</div>
+      </div>
+
+      <!-- Sleep & SpO2 Card -->
+      <div class="vital-card card-purple">
+        <div class="card-header">
+          <span class="card-title">SLEEP & SpO2</span>
+          <span class="icon">🌙</span>
+        </div>
+        <div class="card-value-row">
+          <span id="sleep-val" class="main-val">--</span>
+          <span class="unit">hrs</span>
+        </div>
+        <div id="spo2-sub" class="card-sub">SpO2: --%</div>
+      </div>
+    </div>
+
+    <!-- Sync Stream Table -->
+    <div class="sync-panel">
+      <h2>Recent Android Daemon Sync Log</h2>
+      <ul id="sync-list" class="sync-list">
+        <!-- Dynamically populated -->
+      </ul>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

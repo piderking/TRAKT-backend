@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trakt Movies & TV Microservice Plugin UI</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="plugin-container">
+    <header class="plugin-header">
+      <div class="plugin-badge">
+        <span class="pulse-dot"></span>
+        <span>MOVIES & TV PLUGIN v1.0.0</span>
+      </div>
+      <h1 class="plugin-title">Plugin Direct Telemetry UI</h1>
+      <p class="plugin-subtitle">Decoupled Microservice Interface served directly from <code>TRAKT-backend</code></p>
+    </header>
+
+    <main class="plugin-main">
+      <div class="controls-bar">
+        <button id="fetch-btn" class="btn btn-primary">Refresh Up Next</button>
+        <span id="status-text" class="status-label">Ready</span>
+      </div>
+
+      <div id="media-grid" class="media-grid">
+        <!-- Dynamically populated via script.js -->
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

@@ -1,6 +1,9 @@
+import os
 import time
 from typing import List, Optional
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 app = FastAPI(
@@ -8,6 +11,20 @@ app = FastAPI(
     description="Microservice providing watch progress, up-next recommendations, and metadata for Movies and TV Shows",
     version="1.0.0"
 )
+
+# Mount static directory if it exists
+static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.get("/ui")
+async def get_plugin_ui():
+    """Serve embedded plugin web interface."""
+    index_file = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    return {"error": "UI index.html not found"}
+
 
 class NextEpisode(BaseModel):
     season: int

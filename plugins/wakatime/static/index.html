@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WakaTime & Antigravity Token Telemetry</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="telemetry-container">
+    <header class="telemetry-header">
+      <div class="plugin-pill">
+        <span class="status-dot"></span>
+        <span>WAKATIME & ANTIGRAVITY TOKEN TRACKER</span>
+      </div>
+      <h1>Token Consumption & Coding Telemetry</h1>
+      <p class="subtitle">Live model token tracking and scrobbler stats served from <code>TRAKT-backend</code></p>
+    </header>
+
+    <!-- Metrics Cards Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card highlight-blue">
+        <p class="label">TOTAL CONSUMED TOKENS</p>
+        <p id="total-tokens" class="value">--</p>
+        <p id="tokens-sub" class="subtext">Prompt + Completion</p>
+      </div>
+
+      <div class="metric-card highlight-green">
+        <p class="label">WAKATIME CODING TODAY</p>
+        <p id="waka-today" class="value">--</p>
+        <p id="waka-sub" class="subtext">Active Scrobbler Time</p>
+      </div>
+
+      <div class="metric-card highlight-purple">
+        <p class="label">CLI SESSIONS TRACKED</p>
+        <p id="sessions-count" class="value">--</p>
+        <p class="subtext">Antigravity 2.0 Agent</p>
+      </div>
+
+      <div class="metric-card highlight-emerald">
+        <p class="label">TOP LANGUAGE</p>
+        <p id="top-lang" class="value">Python</p>
+        <p class="subtext">52.4% of total time</p>
+      </div>
+    </div>
+
+    <!-- Telemetry Panels -->
+    <div class="panels-grid">
+      <!-- Model Tokens Breakdown -->
+      <div class="panel">
+        <h2>Model Token Distribution</h2>
+        <div id="models-container" class="models-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Live Activity Log -->
+      <div class="panel">
+        <h2>Recent Scrobble Heartbeats</h2>
+        <ul id="activity-list" class="activity-list">
+          <!-- Dynamically populated -->
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #07090e;
+  color: #f3f4f6;
+  font-family: 'Inter', sans-serif;
+  padding: 2.5rem;
+  min-height: 100vh;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: #1f2937;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #ff8000;
+}
+
+.letterboxd-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.letterboxd-header {
+  border-bottom: 1px solid #1f2937;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.pill-badge {
+  display: inline-flex;
+  background: #191410;
+  border: 1px solid #ff8000;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #ff8000;
+  margin-bottom: 12px;
+}
+
+h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.upload-panel {
+  margin-bottom: 2rem;
+}
+
+.dropzone {
+  border: 2px dashed #ff8000;
+  background: #11141c;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.dropzone:hover {
+  background: #191410;
+  border-color: #00e054;
+}
+
+.dropzone-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.dropzone h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.dropzone p {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  margin-bottom: 1.5rem;
+}
+
+.btn-browse {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff8000, #00e054);
+  color: #000;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: #11141c;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.card-label {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.card-num {
+  font-size: 2.25rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: #ff8000;
+}
+
+.history-panel {
+  background-color: #11141c;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.history-panel h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #191d28;
+  border: 1px solid #262d3d;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+}
+
+.history-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #00e054;
+}

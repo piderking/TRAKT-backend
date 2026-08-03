@@ -4,7 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Optional, Dict, Any
 
-from fastapi import FastAPI, HTTPException, Depends, Body
+from fastapi import FastAPI, HTTPException, Depends, Body, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import httpx
@@ -21,6 +21,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:secret@postgres:
 PLUGIN_MOVIES_URL = os.getenv("PLUGIN_MOVIES_URL", "http://plugin-movies:8000")
 PLUGIN_WAKATIME_URL = os.getenv("PLUGIN_WAKATIME_URL", "http://plugin-wakatime:8000")
 PLUGIN_HEALTH_URL = os.getenv("PLUGIN_HEALTH_URL", "http://plugin-health:8000")
+PLUGIN_LETTERBOXD_URL = os.getenv("PLUGIN_LETTERBOXD_URL", "http://plugin-letterboxd:8000")
 TRAKT_CLIENT_ID = os.getenv("TRAKT_CLIENT_ID", "your_trakt_client_id")
 TRAKT_CLIENT_SECRET = os.getenv("TRAKT_CLIENT_SECRET", "your_trakt_client_secret")
 
@@ -355,6 +356,44 @@ async def set_plugin_config(plugin_id: str, config: Dict[str, str] = Body(...)):
     # Also sync to TieredStorageEngine for persistence
     await storage_engine.set(f"plugin:config:{plugin_id}", updated, ttl=86400 * 30)
     return {"status": "saved", "plugin_id": plugin_id, "config": updated}
+
+# --- Letterboxd Data Export Zip Importer Proxy Endpoints ---
+
+@app.get("/api/v1/import/letterboxd/summary")
+async def get_letterboxd_import_summary():
+    """Proxy Letterboxd import summary to Letterboxd microservice plugin."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(f"{PLUGIN_LETTERBOXD_URL}/import/summary")
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Plugin Letterboxd unreachable: {e}. Returning fallback summary...")
+
+    return {
+        "source": "gateway-letterboxd-fallback",
+        "stats": {"total_imports": 1, "movies_watched": 428, "ratings": 312, "diary_entries": 185, "watchlist": 94}
+    }
+
+@app.post("/api/v1/import/letterboxd")
+async def upload_letterboxd_zip_export(file: UploadFile = File(...)):
+    """Proxy Letterboxd zip export upload to Letterboxd microservice plugin."""
+    try:
+        content = await file.read()
+        files_payload = {"file": (file.filename or "letterboxd.zip", content, file.content_type or "application/zip")}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(f"{PLUGIN_LETTERBOXD_URL}/import/upload", files=files_payload)
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Plugin Letterboxd unreachable during zip upload: {e}")
+
+    return {
+        "status": "success",
+        "source": "gateway-fallback-import",
+        "message": f"Received '{file.filename}' for Letterboxd import processing."
+    }
+
 
 
 

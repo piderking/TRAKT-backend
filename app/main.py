@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 import httpx
 
 from app.core.storage import TieredStorageEngine
+from app.core.oauth_server import oauth_server
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("trakt.gateway")
@@ -278,5 +279,80 @@ async def sync_health_telemetry(payload: Dict[str, Any] = Body(...)):
         "source": "gateway-tiered-storage",
         "message": "Biometrics stored in TieredStorageEngine"
     }
+
+# --- Built-in OAuth 2.0 Authorization Server Endpoints ---
+
+class OAuthClientRegisterRequest(BaseModel):
+    client_name: str
+    redirect_uris: list[str]
+    scopes: list[str] = ["read", "write", "scrobble"]
+
+class OAuthTokenRequest(BaseModel):
+    grant_type: str = "authorization_code"
+    code: Optional[str] = None
+    client_id: str
+    client_secret: str
+    redirect_uri: Optional[str] = None
+
+@app.post("/oauth/clients/register")
+async def register_oauth_client(payload: OAuthClientRegisterRequest):
+    """Register a new client application with the OAuth 2.0 Authorization Server."""
+    client = oauth_server.register_client(
+        client_name=payload.client_name,
+        redirect_uris=payload.redirect_uris,
+        scopes=payload.scopes
+    )
+    return client
+
+@app.post("/oauth/authorize/code")
+async def request_oauth_code(client_id: str, redirect_uri: str, scope: str = "read"):
+    """Request an OAuth 2.0 Authorization Code."""
+    try:
+        code = oauth_server.create_authorization_code(client_id=client_id, redirect_uri=redirect_uri, scope=scope)
+        return {"authorization_code": code, "expires_in": 600}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/oauth/token")
+async def issue_oauth_token(payload: OAuthTokenRequest):
+    """Exchange authorization code or credentials for a JWT Access Token."""
+    if payload.grant_type == "authorization_code" and payload.code:
+        try:
+            tokens = oauth_server.exchange_code_for_tokens(
+                code=payload.code,
+                client_id=payload.client_id,
+                client_secret=payload.client_secret
+            )
+            return tokens
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported grant_type or missing code")
+
+@app.get("/oauth/userinfo")
+async def get_oauth_userinfo(token: str):
+    """Verify JWT Access Token and return authenticated user details."""
+    try:
+        payload = oauth_server.verify_jwt_token(token)
+        return {"sub": payload.get("sub"), "client_id": payload.get("client_id"), "scope": payload.get("scope")}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+# --- Plugin Configuration & API Keys Settings Endpoints ---
+
+@app.get("/api/v1/plugins/config")
+async def get_plugin_config(plugin_id: str):
+    """Get stored API keys and configuration credentials for a plugin."""
+    config = oauth_server.get_plugin_config(plugin_id)
+    return {"plugin_id": plugin_id, "config": config}
+
+@app.post("/api/v1/plugins/config")
+async def set_plugin_config(plugin_id: str, config: Dict[str, str] = Body(...)):
+    """Save API keys (e.g., WAKATIME_API_KEY, TRAKT_CLIENT_ID) for a plugin."""
+    updated = oauth_server.set_plugin_config(plugin_id, config)
+    # Also sync to TieredStorageEngine for persistence
+    await storage_engine.set(f"plugin:config:{plugin_id}", updated, ttl=86400 * 30)
+    return {"status": "saved", "plugin_id": plugin_id, "config": updated}
+
 
 

@@ -341,12 +341,14 @@ async def get_oauth_userinfo(token: str):
 # --- Plugin Configuration & API Keys Settings Endpoints ---
 
 @app.get("/api/v1/plugins/config")
+@app.get("/api/v1/plugins/config/{plugin_id}")
 async def get_plugin_config(plugin_id: str):
     """Get stored API keys and configuration credentials for a plugin."""
     config = oauth_server.get_plugin_config(plugin_id)
     return {"plugin_id": plugin_id, "config": config}
 
 @app.post("/api/v1/plugins/config")
+@app.post("/api/v1/plugins/config/{plugin_id}")
 async def set_plugin_config(plugin_id: str, config: Dict[str, str] = Body(...)):
     """Save API keys (e.g., WAKATIME_API_KEY, TRAKT_CLIENT_ID) for a plugin."""
     updated = oauth_server.set_plugin_config(plugin_id, config)

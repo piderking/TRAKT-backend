@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steam Web API Gaming Telemetry UI</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="steam-container">
+    <header class="steam-header">
+      <div class="pill-badge">
+        <span>🎮</span>
+        <span>STEAM WEB API GAMING TELEMETRY</span>
+      </div>
+      <h1>Live Steam Playback & Library Stats</h1>
+      <p class="subtitle">Real-time Steam playing status, total library hours, and achievements</p>
+    </header>
+
+    <!-- Currently Playing Game Card -->
+    <div class="now-playing-card">
+      <div class="game-banner-wrap">
+        <img id="game-banner" src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80" alt="Game Banner">
+      </div>
+      <div class="game-info">
+        <span class="status-tag">CURRENTLY IN-GAME</span>
+        <h2 id="game-title">Cyberpunk 2077</h2>
+        <p id="game-session" class="session-info">Session: 85 mins • App ID: 1091500</p>
+        <p id="game-total" class="total-hours">Total Playtime: 142.8 Hours</p>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="card-label">GAMES OWNED</span>
+        <span id="stat-owned" class="card-num">184</span>
+      </div>
+      <div class="stat-card">
+        <span class="card-label">TOTAL HOURS PLAYED</span>
+        <span id="stat-hours" class="card-num">1,420h</span>
+      </div>
+      <div class="stat-card">
+        <span class="card-label">RECENT 2 WEEKS</span>
+        <span id="stat-2weeks" class="card-num">24.6h</span>
+      </div>
+      <div class="stat-card">
+        <span class="card-label">ACHIEVEMENTS</span>
+        <span id="stat-achievements" class="card-num">842</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

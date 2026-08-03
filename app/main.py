@@ -23,6 +23,7 @@ PLUGIN_WAKATIME_URL = os.getenv("PLUGIN_WAKATIME_URL", "http://plugin-wakatime:8
 PLUGIN_HEALTH_URL = os.getenv("PLUGIN_HEALTH_URL", "http://plugin-health:8000")
 PLUGIN_LETTERBOXD_URL = os.getenv("PLUGIN_LETTERBOXD_URL", "http://plugin-letterboxd:8000")
 PLUGIN_SPOTIFY_URL = os.getenv("PLUGIN_SPOTIFY_URL", "http://plugin-spotify:8000")
+PLUGIN_STEAM_URL = os.getenv("PLUGIN_STEAM_URL", "http://plugin-steam:8000")
 TRAKT_CLIENT_ID = os.getenv("TRAKT_CLIENT_ID", "your_trakt_client_id")
 TRAKT_CLIENT_SECRET = os.getenv("TRAKT_CLIENT_SECRET", "your_trakt_client_secret")
 
@@ -550,6 +551,59 @@ async def scrobble_spotify_track(payload: Dict[str, Any] = Body(...)):
         logger.warning(f"Plugin Spotify unreachable during scrobble: {e}")
 
     return {"status": "success", "source": "gateway-tiered-storage", "message": "Scrobbled to Tiered Storage"}
+
+# --- Steam Web API Gaming Endpoints ---
+
+@app.get("/api/v1/steam/summary")
+async def get_steam_summary():
+    """Proxy Steam gaming summary to Steam microservice plugin."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(f"{PLUGIN_STEAM_URL}/telemetry/summary")
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Plugin Steam unreachable: {e}. Returning fallback summary...")
+
+    return {
+        "source": "gateway-steam-fallback",
+        "now_playing": {
+            "game_title": "Cyberpunk 2077",
+            "app_id": 1091500,
+            "is_playing": True,
+            "session_playtime_mins": 85,
+            "total_playtime_hours": 142.8
+        },
+        "stats": {"games_owned": 184, "total_hours_played": 1420.5, "recent_2weeks_hours": 24.6}
+    }
+
+@app.get("/api/v1/steam/now-playing")
+async def get_steam_now_playing():
+    """Proxy live Steam game now playing status."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(f"{PLUGIN_STEAM_URL}/telemetry/now-playing")
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Plugin Steam unreachable: {e}")
+
+    return {"is_playing": False, "game_title": "Offline"}
+
+@app.post("/api/v1/steam/scrobble")
+async def scrobble_steam_game(payload: Dict[str, Any] = Body(...)):
+    """Proxy live game session scrobble to Steam microservice plugin & Tiered Storage."""
+    await storage_engine.set("steam:now_playing", payload, ttl=86400)
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.post(f"{PLUGIN_STEAM_URL}/telemetry/scrobble", json=payload)
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Plugin Steam unreachable during scrobble: {e}")
+
+    return {"status": "success", "source": "gateway-tiered-storage", "message": "Scrobbled game session to Tiered Storage"}
+
 
 
 

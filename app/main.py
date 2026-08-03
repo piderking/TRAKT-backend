@@ -394,6 +394,111 @@ async def upload_letterboxd_zip_export(file: UploadFile = File(...)):
         "message": f"Received '{file.filename}' for Letterboxd import processing."
     }
 
+# --- Letterboxd-Style Movie Logger & Diary Endpoints ---
+
+class MovieLogRequest(BaseModel):
+    movie_title: str = Field(..., description="Title of the movie")
+    release_year: Optional[int] = Field(2024, description="Release year")
+    watched_date: str = Field(..., description="Date watched (YYYY-MM-DD)")
+    rating: float = Field(8.0, ge=1.0, le=10.0, description="Rating from 1.0 to 10.0")
+    is_rewatch: bool = Field(False, description="Whether this is a rewatch")
+    liked: bool = Field(False, description="Heart / Like toggle")
+    review: Optional[str] = Field("", description="Journal review or notes")
+    tags: list[str] = Field(default_factory=list, description="Custom tags")
+    poster_url: Optional[str] = Field(None, description="Movie poster URL")
+
+movie_diary_store: list[dict[str, Any]] = [
+    {
+        "id": "log_1",
+        "movie_title": "Dune: Part Two",
+        "release_year": 2024,
+        "watched_date": "2026-08-03",
+        "rating": 9.5,
+        "is_rewatch": True,
+        "liked": True,
+        "review": "Visually breathtaking sci-fi masterpiece. Denis Villeneuve is operating at the absolute peak of cinema.",
+        "tags": ["cinema", "imax-70mm", "favorite"],
+        "poster_url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
+        "timestamp": time.time() - 3600
+    },
+    {
+        "id": "log_2",
+        "movie_title": "Oppenheimer",
+        "release_year": 2023,
+        "watched_date": "2026-08-01",
+        "rating": 9.0,
+        "is_rewatch": False,
+        "liked": True,
+        "review": "Incredible sound design and editing. Cillian Murphy gives a career-defining performance.",
+        "tags": ["biopic", "4k-uhd"],
+        "poster_url": "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=500&q=80",
+        "timestamp": time.time() - 86400
+    }
+]
+
+@app.get("/api/v1/movies/diary")
+async def get_movie_diary():
+    """Retrieve Letterboxd-style movie log diary entries and rating statistics."""
+    total_logs = len(movie_diary_store)
+    rewatch_count = sum(1 for item in movie_diary_store if item.get("is_rewatch"))
+    liked_count = sum(1 for item in movie_diary_store if item.get("liked"))
+    
+    # Calculate rating distribution (1 to 10 scale)
+    ratings_dist = {str(i): 0 for i in range(1, 11)}
+    for item in movie_diary_store:
+        r_bucket = str(min(10, max(1, int(round(item.get("rating", 8.0))))))
+        ratings_dist[r_bucket] += 1
+
+    return {
+        "status": "success",
+        "stats": {
+            "total_logged": total_logs,
+            "rewatch_count": rewatch_count,
+            "liked_count": liked_count,
+            "rating_distribution": ratings_dist
+        },
+        "diary": movie_diary_store
+    }
+
+@app.post("/api/v1/movies/log")
+async def create_movie_log(payload: MovieLogRequest):
+    """Log a new movie entry into the user's Trakt Letterboxd-style diary."""
+    import secrets
+    log_id = f"log_{secrets.token_hex(6)}"
+    
+    entry = {
+        "id": log_id,
+        "movie_title": payload.movie_title,
+        "release_year": payload.release_year or 2024,
+        "watched_date": payload.watched_date,
+        "rating": payload.rating,
+        "is_rewatch": payload.is_rewatch,
+        "liked": payload.liked,
+        "review": payload.review or "",
+        "tags": payload.tags,
+        "poster_url": payload.poster_url or "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
+        "timestamp": time.time()
+    }
+    
+    movie_diary_store.insert(0, entry)
+
+    # Cache to Tiered Storage Engine
+    await storage_engine.set(f"movie:log:{log_id}", entry, ttl=86400 * 30)
+
+    return {
+        "status": "success",
+        "message": f"Successfully logged '{payload.movie_title}' into Trakt Diary",
+        "entry": entry
+    }
+
+@app.delete("/api/v1/movies/log/{log_id}")
+async def delete_movie_log(log_id: str):
+    """Delete a movie diary log entry."""
+    global movie_diary_store
+    movie_diary_store = [m for m in movie_diary_store if m["id"] != log_id]
+    return {"status": "deleted", "log_id": log_id}
+
+
 
 
 

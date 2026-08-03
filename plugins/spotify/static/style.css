@@ -1,0 +1,220 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #07090e;
+  color: #f3f4f6;
+  font-family: 'Inter', sans-serif;
+  padding: 2.5rem;
+  min-height: 100vh;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: #1f2937;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #1db954;
+}
+
+.spotify-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.spotify-header {
+  border-bottom: 1px solid #1f2937;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0d2818;
+  border: 1px solid #1db954;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #1db954;
+  margin-bottom: 12px;
+}
+
+.music-wave {
+  animation: bounce 1.5s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* Now Playing Card */
+.now-playing-card {
+  background: linear-gradient(135deg, #0d2818, #11141c);
+  border: 1px solid rgba(29, 185, 84, 0.4);
+  box-shadow: 0 0 30px rgba(29, 185, 84, 0.15);
+  border-radius: 16px;
+  padding: 1.75rem;
+  display: flex;
+  gap: 1.75rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.album-art-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.album-art-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.status-tag {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #1db954;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.track-info {
+  flex: 1;
+}
+
+.track-info h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 4px 0 2px 0;
+}
+
+.track-info p {
+  color: #d1d5db;
+  font-size: 0.9375rem;
+}
+
+.album-name {
+  color: #9ca3af !important;
+  font-size: 0.8125rem !important;
+  margin-top: 2px;
+}
+
+.track-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.progress-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: #1f2937;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #1db954;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: #11141c;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.card-label {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.card-num {
+  font-size: 2.25rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: #1db954;
+}
+
+.history-panel {
+  background-color: #11141c;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.history-panel h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.history-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #191d28;
+  border: 1px solid #262d3d;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+}
+
+.track-title-item {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.track-artist-item {
+  color: #9ca3af;
+  font-size: 11px;
+}

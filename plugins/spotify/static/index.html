@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify Scrobbler Telemetry UI</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="spotify-container">
+    <header class="spotify-header">
+      <div class="pill-badge">
+        <span class="music-wave">♬</span>
+        <span>SPOTIFY WEB API SCROBBLER</span>
+      </div>
+      <h1>Live Music Telemetry & Audio Features</h1>
+      <p class="subtitle">Real-time Spotify listening history and audio feature analysis</p>
+    </header>
+
+    <!-- Currently Playing Card -->
+    <div class="now-playing-card">
+      <div class="album-art-wrap">
+        <img id="album-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80" alt="Album Art">
+        <div class="playing-equalizer">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="track-info">
+        <span class="status-tag">NOW PLAYING</span>
+        <h2 id="track-title">Starboy</h2>
+        <p id="track-artist">The Weeknd ft. Daft Punk</p>
+        <p id="track-album" class="album-name">Album • Starboy</p>
+
+        <!-- Progress Bar -->
+        <div class="track-progress-container">
+          <span id="time-current" class="time-label">2:22</span>
+          <div class="progress-bar-bg">
+            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 61%;"></div>
+          </div>
+          <span id="time-total" class="time-label">3:50</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio Features & Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="card-label">TRACKS PLAYED TODAY</span>
+        <span id="stat-tracks" class="card-num">34</span>
+      </div>
+      <div class="stat-card">
+        <span class="card-label">MINUTES LISTENED</span>
+        <span id="stat-mins" class="card-num">118m</span>
+      </div>
+      <div class="stat-card">
+        <span class="card-label">TEMPO (BPM)</span>
+        <span id="stat-bpm" class="card-num">186</span>
+      </div>
+      <div class="stat-card">
+        <span class="card-label">ENERGY LEVEL</span>
+        <span id="stat-energy" class="card-num">82%</span>
+      </div>
+    </div>
+
+    <!-- Listening History Log -->
+    <div class="history-panel">
+      <h2>Recent Listening Scrobble Log</h2>
+      <ul id="history-list" class="history-list">
+        <!-- Dynamically populated -->
+      </ul>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

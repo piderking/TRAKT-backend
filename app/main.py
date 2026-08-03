@@ -22,6 +22,7 @@ PLUGIN_MOVIES_URL = os.getenv("PLUGIN_MOVIES_URL", "http://plugin-movies:8000")
 PLUGIN_WAKATIME_URL = os.getenv("PLUGIN_WAKATIME_URL", "http://plugin-wakatime:8000")
 PLUGIN_HEALTH_URL = os.getenv("PLUGIN_HEALTH_URL", "http://plugin-health:8000")
 PLUGIN_LETTERBOXD_URL = os.getenv("PLUGIN_LETTERBOXD_URL", "http://plugin-letterboxd:8000")
+PLUGIN_SPOTIFY_URL = os.getenv("PLUGIN_SPOTIFY_URL", "http://plugin-spotify:8000")
 TRAKT_CLIENT_ID = os.getenv("TRAKT_CLIENT_ID", "your_trakt_client_id")
 TRAKT_CLIENT_SECRET = os.getenv("TRAKT_CLIENT_SECRET", "your_trakt_client_secret")
 
@@ -497,6 +498,59 @@ async def delete_movie_log(log_id: str):
     global movie_diary_store
     movie_diary_store = [m for m in movie_diary_store if m["id"] != log_id]
     return {"status": "deleted", "log_id": log_id}
+
+# --- Spotify API Scrobbler Endpoints ---
+
+@app.get("/api/v1/spotify/summary")
+async def get_spotify_summary():
+    """Proxy Spotify scrobbler summary to Spotify microservice plugin."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(f"{PLUGIN_SPOTIFY_URL}/telemetry/summary")
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Plugin Spotify unreachable: {e}. Returning fallback summary...")
+
+    return {
+        "source": "gateway-spotify-fallback",
+        "now_playing": {
+            "track_name": "Starboy",
+            "artist_name": "The Weeknd ft. Daft Punk",
+            "album_name": "Starboy",
+            "is_playing": True,
+            "audio_features": {"bpm": 186, "energy": 0.82}
+        },
+        "stats": {"tracks_played_today": 34, "total_listening_minutes": 118}
+    }
+
+@app.get("/api/v1/spotify/now-playing")
+async def get_spotify_now_playing():
+    """Proxy live Spotify now playing status."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(f"{PLUGIN_SPOTIFY_URL}/telemetry/now-playing")
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Plugin Spotify unreachable: {e}")
+
+    return {"is_playing": False, "track_name": "Standby"}
+
+@app.post("/api/v1/spotify/scrobble")
+async def scrobble_spotify_track(payload: Dict[str, Any] = Body(...)):
+    """Proxy live track scrobble to Spotify microservice plugin & Tiered Storage."""
+    await storage_engine.set("spotify:now_playing", payload, ttl=86400)
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.post(f"{PLUGIN_SPOTIFY_URL}/telemetry/scrobble", json=payload)
+            if resp.status_code == 200:
+                return resp.json()
+    except Exception as e:
+        logger.warning(f"Plugin Spotify unreachable during scrobble: {e}")
+
+    return {"status": "success", "source": "gateway-tiered-storage", "message": "Scrobbled to Tiered Storage"}
+
 
 
 

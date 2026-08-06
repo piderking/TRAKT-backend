@@ -425,7 +425,144 @@ class MovieLogRequest(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Custom tags")
     poster_url: Optional[str] = Field(None, description="Movie poster URL")
 
+TMDB_API_KEY = os.getenv("TMDB_API_KEY", "")
+
+TRENDING_MOVIES_CATALOG = [
+    {
+        "id": 823464,
+        "title": "Dune: Part Two",
+        "release_year": 2024,
+        "rating": 8.6,
+        "overview": "Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.",
+        "poster_url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
+        "genre": "Sci-Fi / Adventure"
+    },
+    {
+        "id": 872585,
+        "title": "Oppenheimer",
+        "release_year": 2023,
+        "rating": 8.9,
+        "overview": "The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.",
+        "poster_url": "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=500&q=80",
+        "genre": "Biography / Drama"
+    },
+    {
+        "id": 157336,
+        "title": "Interstellar",
+        "release_year": 2014,
+        "rating": 8.7,
+        "overview": "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+        "poster_url": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&q=80",
+        "genre": "Sci-Fi / Drama"
+    },
+    {
+        "id": 533535,
+        "title": "Deadpool & Wolverine",
+        "release_year": 2024,
+        "rating": 7.9,
+        "overview": "Wolverine is recovering from his injuries when he crosses paths with the loudmouth Deadpool.",
+        "poster_url": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=500&q=80",
+        "genre": "Action / Comedy"
+    },
+    {
+        "id": 945961,
+        "title": "Alien: Romulus",
+        "release_year": 2024,
+        "rating": 7.3,
+        "overview": "While scavenging the deep ends of a derelict space station, a group of young space colonizers come face to face with the most terrifying life form in the universe.",
+        "poster_url": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80",
+        "genre": "Sci-Fi / Horror"
+    },
+    {
+        "id": 558449,
+        "title": "Gladiator II",
+        "release_year": 2024,
+        "rating": 7.5,
+        "overview": "Years after witnessing the death of Maximus at the hands of his uncle, Lucius must enter the Colosseum after his home is conquered by the tyrannical Emperors.",
+        "poster_url": "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=500&q=80",
+        "genre": "Action / History"
+    },
+    {
+        "id": 335984,
+        "title": "Blade Runner 2049",
+        "release_year": 2017,
+        "rating": 8.0,
+        "overview": "Young Blade Runner K's discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard.",
+        "poster_url": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&q=80",
+        "genre": "Sci-Fi / Mystery"
+    },
+    {
+        "id": 496243,
+        "title": "Parasite",
+        "release_year": 2019,
+        "rating": 8.5,
+        "overview": "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.",
+        "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
+        "genre": "Thriller / Drama"
+    }
+]
+
 movie_diary_store: list[dict[str, Any]] = []
+
+@app.get("/api/v1/movies/trending")
+async def get_trending_movies():
+    """Fetch new and trending movies for discovery and quick logging."""
+    if TMDB_API_KEY:
+        try:
+            url = f"https://api.themoviedb.org/3/trending/movie/week?api_key={TMDB_API_KEY}"
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                resp = await client.get(url)
+                if resp.status_code == 200:
+                    results = resp.json().get("results", [])
+                    formatted = []
+                    for m in results[:10]:
+                        formatted.append({
+                            "id": m.get("id"),
+                            "title": m.get("title"),
+                            "release_year": int(m.get("release_date", "2024")[:4]) if m.get("release_date") else 2024,
+                            "rating": round(m.get("vote_average", 8.0), 1),
+                            "overview": m.get("overview", ""),
+                            "poster_url": f"https://image.tmdb.org/t/p/w500{m.get('poster_path')}" if m.get("poster_path") else "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
+                            "genre": "Trending"
+                        })
+                    return {"status": "success", "source": "tmdb-api", "movies": formatted}
+        except Exception as e:
+            logger.warning(f"TMDB trending API fetch failed: {e}")
+
+    return {"status": "success", "source": "trakt-catalog", "movies": TRENDING_MOVIES_CATALOG}
+
+@app.get("/api/v1/movies/search")
+async def search_movies(q: str = ""):
+    """Search movies by title for instant lookup and quick logging."""
+    query = q.strip().lower()
+    if not query:
+        return await get_trending_movies()
+
+    if TMDB_API_KEY:
+        try:
+            url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={query}"
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                resp = await client.get(url)
+                if resp.status_code == 200:
+                    results = resp.json().get("results", [])
+                    formatted = []
+                    for m in results[:10]:
+                        formatted.append({
+                            "id": m.get("id"),
+                            "title": m.get("title"),
+                            "release_year": int(m.get("release_date", "2024")[:4]) if m.get("release_date") else 2024,
+                            "rating": round(m.get("vote_average", 8.0), 1),
+                            "overview": m.get("overview", ""),
+                            "poster_url": f"https://image.tmdb.org/t/p/w500{m.get('poster_path')}" if m.get("poster_path") else "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
+                            "genre": "Movie"
+                        })
+                    return {"status": "success", "query": q, "source": "tmdb-api", "results": formatted}
+        except Exception as e:
+            logger.warning(f"TMDB search API fetch failed: {e}")
+
+    # Fallback search against catalog
+    matched = [m for m in TRENDING_MOVIES_CATALOG if query in m["title"].lower() or query in m["genre"].lower()]
+    return {"status": "success", "query": q, "source": "trakt-catalog", "results": matched}
 
 @app.get("/api/v1/movies/diary")
 async def get_movie_diary():

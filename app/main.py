@@ -916,347 +916,72 @@ class UniversalEntityRequest(BaseModel):
     relations: List[str] = Field(default_factory=list, description="Linked entity IDs")
     image_url: Optional[str] = Field(None, description="Banner / poster image URL")
 
-universal_entities_store: List[Dict[str, Any]] = [
-    # 1. Movie
-    {
-        "id": "ent_201",
-        "domain": "movie",
-        "title": "The Odyssey",
-        "subtitle": "Christopher Nolan",
-        "timestamp": time.time() - 3600,
-        "tags": ["theatre", "imax-70mm", "cinema", "nolan"],
-        "properties": {
-            "director": "Christopher Nolan",
-            "location": "AMC Lincoln Square IMAX 70mm",
-            "rating": 10.0,
-            "format": "70mm Film Print",
-            "rewatch": False
-        },
-        "relations": ["ent_202"],
-        "image_url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80"
-    },
-    # 2. Music
-    {
-        "id": "ent_202",
-        "domain": "music",
-        "title": "Interstellar Original Soundtrack",
-        "subtitle": "Hans Zimmer",
-        "timestamp": time.time() - 7200,
-        "tags": ["spotify", "soundtrack", "ambient", "vinyl"],
-        "properties": {
-            "platform": "Spotify Web API",
-            "bpm": 110,
-            "energy": 0.85,
-            "duration_formatted": "4:20"
-        },
-        "relations": ["ent_201"],
-        "image_url": "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80"
-    },
-    # 3. Gaming
-    {
-        "id": "ent_203",
-        "domain": "gaming",
-        "title": "Marvel Rivals",
-        "subtitle": "NetEase Games",
-        "timestamp": time.time() - 14400,
-        "tags": ["steam", "pc", "multiplayer", "muncher"],
-        "properties": {
-            "steam_app_id": 2767030,
-            "hours_played": 806.0,
-            "recent_2weeks_hours": 16.7,
-            "location": "Home Battlestation PC"
-        },
-        "relations": [],
-        "image_url": "https://cdn.cloudflare.steamstatic.com/steam/apps/2767030/header.jpg"
-    },
-    # 4. Fitness
-    {
-        "id": "ent_204",
-        "domain": "fitness",
-        "title": "Evening 10k Run & Interval Sprint",
-        "subtitle": "Equinox Gym & Park Trail",
-        "timestamp": time.time() - 18000,
-        "tags": ["running", "strava", "gym", "cardio"],
-        "properties": {
-            "distance_km": 10.2,
-            "calories_active_kcal": 680,
-            "avg_pace": "4:45 /km",
-            "location": "Central Park Running Loop"
-        },
-        "relations": ["ent_205"],
-        "image_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500&q=80"
-    },
-    # 5. Health & Vitals
-    {
-        "id": "ent_205",
-        "domain": "health",
-        "title": "Android Health Connect Biometrics",
-        "subtitle": "Pixel 8 Pro Daemon",
-        "timestamp": time.time() - 1800,
-        "tags": ["health-connect", "android", "pixel-8-pro"],
-        "properties": {
-            "steps": 8840,
-            "heart_rate_bpm": 74,
-            "resting_hr_bpm": 58,
-            "sleep_hours": 7.8,
-            "spo2": 99.0
-        },
-        "relations": ["ent_204"],
-        "image_url": "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=500&q=80"
-    },
-    # 6. Coding
-    {
-        "id": "ent_206",
-        "domain": "coding",
-        "title": "TRAKT Universal Architecture Engine",
-        "subtitle": "Antigravity AI CLI & WakaTime",
-        "timestamp": time.time() - 900,
-        "tags": ["wakatime", "antigravity", "python", "typescript"],
-        "properties": {
-            "prompt_tokens": 142500,
-            "completion_tokens": 48200,
-            "active_language": "Python / TypeScript",
-            "today_seconds": 18420
-        },
-        "relations": ["ent_201", "ent_203"],
-        "image_url": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&q=80"
-    },
-    # 7. Books & Reading
-    {
-        "id": "ent_207",
-        "domain": "reading",
-        "title": "Dune Messiah",
-        "subtitle": "Frank Herbert",
-        "timestamp": time.time() - 86400,
-        "tags": ["goodreads", "kindle", "sci-fi", "favorite"],
-        "properties": {
-            "author": "Frank Herbert",
-            "pages_read": 304,
-            "format": "Kindle Oasis",
-            "rating": 9.0,
-            "location": "Reading Nook"
-        },
-        "relations": ["ent_201"],
-        "image_url": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80"
-    },
-    # 8. TV Shows & Anime
-    {
-        "id": "ent_208",
-        "domain": "tv",
-        "title": "Shōgun - Season 1",
-        "subtitle": "FX / Hulu",
-        "timestamp": time.time() - 172800,
-        "tags": ["trakt-tv", "hulu", "drama", "feudal-japan"],
-        "properties": {
-            "season": 1,
-            "episodes_watched": 10,
-            "rating": 9.8,
-            "location": "Living Room OLED TV"
-        },
-        "relations": [],
-        "image_url": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&q=80"
-    },
-    # 9. Podcasts
-    {
-        "id": "ent_209",
-        "domain": "podcast",
-        "title": "Lex Fridman Podcast #420 - AI & Physics",
-        "subtitle": "Lex Fridman",
-        "timestamp": time.time() - 259200,
-        "tags": ["spotify-podcasts", "ai", "physics", "deep-talk"],
-        "properties": {
-            "host": "Lex Fridman",
-            "duration_mins": 195,
-            "playback_speed": "1.5x",
-            "location": "Car Commute"
-        },
-        "relations": ["ent_206"],
-        "image_url": "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=500&q=80"
-    },
-    # 10. Coffee & Beverages
-    {
-        "id": "ent_210",
-        "domain": "beverage",
-        "title": "Ethiopia Yirgacheffe Pour-Over Coffee",
-        "subtitle": "Blue Bottle Coffee",
-        "timestamp": time.time() - 12000,
-        "tags": ["cafe", "espresso", "specialty-coffee", "pourover"],
-        "properties": {
-            "roaster": "Blue Bottle Coffee",
-            "brew_method": "V60 Pour-Over",
-            "tasting_notes": "Jasmine, Blueberry, Bergamot",
-            "location": "SoHo Coffee Bar"
-        },
-        "relations": ["ent_206"],
-        "image_url": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=500&q=80"
-    },
-    # 11. Dining & Food
-    {
-        "id": "ent_211",
-        "domain": "dining",
-        "title": "Omakase Sushi Tasting Menu",
-        "subtitle": "Sushi Nakazawa",
-        "timestamp": time.time() - 345600,
-        "tags": ["restaurant", "michelin", "sushi", "japanese"],
-        "properties": {
-            "cuisine": "Japanese Omakase",
-            "rating": 9.9,
-            "chef": "Daisuke Nakazawa",
-            "location": "West Village, NYC"
-        },
-        "relations": [],
-        "image_url": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&q=80"
-    },
-    # 12. Travel & Flights
-    {
-        "id": "ent_212",
-        "domain": "travel",
-        "title": "Flight JFK to HND (Tokyo Haneda)",
-        "subtitle": "Japan Airlines JAL 005",
-        "timestamp": time.time() - 604800,
-        "tags": ["flight", "jal", "japan", "travel"],
-        "properties": {
-            "destination": "Tokyo, Japan",
-            "aircraft": "Boeing 777-300ER",
-            "flight_duration_hrs": 14.5,
-            "seat": "11A Business Class"
-        },
-        "relations": ["ent_213"],
-        "image_url": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=500&q=80"
-    },
-    # 13. Places & Locations
-    {
-        "id": "ent_213",
-        "domain": "location",
-        "title": "Shibuya Crossing & Tsutaya Books",
-        "subtitle": "Foursquare / Google Maps Check-in",
-        "timestamp": time.time() - 518400,
-        "tags": ["foursquare", "checkin", "shibuya", "tokyo"],
-        "properties": {
-            "city": "Tokyo",
-            "country": "Japan",
-            "coordinates": "35.6595° N, 139.7004° E",
-            "venue_type": "Cultural Landmark"
-        },
-        "relations": ["ent_212"],
-        "image_url": "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=500&q=80"
-    },
-    # 14. Finance & Expenses
-    {
-        "id": "ent_214",
-        "domain": "finance",
-        "title": "AMC IMAX 70mm Ticket Expense",
-        "subtitle": "Plaid Ledger Track",
-        "timestamp": time.time() - 3600,
-        "tags": ["plaid", "expense", "entertainment"],
-        "properties": {
-            "amount_usd": 28.50,
-            "category": "Entertainment / Cinema",
-            "payment_method": "Apple Pay (Chase Sapphire)"
-        },
-        "relations": ["ent_201"],
-        "image_url": "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=500&q=80"
-    },
-    # 15. Commute & Drives
-    {
-        "id": "ent_215",
-        "domain": "commute",
-        "title": "Morning Highway Commute to Tech Campus",
-        "subtitle": "Tesla Model Y Autopilot",
-        "timestamp": time.time() - 28800,
-        "tags": ["tesla", "commute", "autopilot"],
-        "properties": {
-            "distance_miles": 24.8,
-            "duration_mins": 35,
-            "avg_speed_mph": 42.5,
-            "energy_used_kwh": 6.2
-        },
-        "relations": ["ent_209"],
-        "image_url": "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500&q=80"
-    },
-    # 16. Sleep & Recovery
-    {
-        "id": "ent_216",
-        "domain": "sleep",
-        "title": "Nightly Sleep & HRV Recovery Score",
-        "subtitle": "Oura Ring Gen 3",
-        "timestamp": time.time() - 28800,
-        "tags": ["ouraring", "sleep-score", "hrv", "recovery"],
-        "properties": {
-            "sleep_score": 92,
-            "rem_sleep_hrs": 2.1,
-            "deep_sleep_hrs": 1.8,
-            "hrv_ms": 68
-        },
-        "relations": ["ent_205"],
-        "image_url": "https://images.unsplash.com/photo-1511295742362-92c96b124e52?w=500&q=80"
-    },
-    # 17. Learning & Courses
-    {
-        "id": "ent_217",
-        "domain": "learning",
-        "title": "Distributed Systems & Raft Consensus Paper Study",
-        "subtitle": "MIT OpenCourseWare",
-        "timestamp": time.time() - 43200,
-        "tags": ["mit", "learning", "distributed-systems", "paper"],
-        "properties": {
-            "topic": "Raft Consensus Algorithm",
-            "instructor": "Prof. Robert Morris",
-            "progress_pct": 100
-        },
-        "relations": ["ent_206"],
-        "image_url": "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=500&q=80"
-    },
-    # 18. Meditation & Wellness
-    {
-        "id": "ent_218",
-        "domain": "wellness",
-        "title": "Mindfulness Meditation & Finnish Sauna",
-        "subtitle": "Headspace & Infrared Sauna",
-        "timestamp": time.time() - 21600,
-        "tags": ["meditation", "sauna", "wellness", "headspace"],
-        "properties": {
-            "session_mins": 20,
-            "sauna_temp_f": 185,
-            "mindfulness_score": 95
-        },
-        "relations": ["ent_205"],
-        "image_url": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=500&q=80"
-    },
-    # 19. Creative Projects
-    {
-        "id": "ent_219",
-        "domain": "creative",
-        "title": "TRAKT UI Design System & Motion Graphics",
-        "subtitle": "Figma & Blender 3D",
-        "timestamp": time.time() - 10800,
-        "tags": ["figma", "blender", "design", "ui-ux"],
-        "properties": {
-            "tool": "Figma & Blender",
-            "hours_spent": 4.5,
-            "assets_rendered": 12
-        },
-        "relations": ["ent_206"],
-        "image_url": "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=500&q=80"
-    },
-    # 20. Shopping & Gear
-    {
-        "id": "ent_220",
-        "domain": "shopping",
-        "title": "Apple Vision Pro Spatial Audio Headset",
-        "subtitle": "Apple Store Fifth Ave",
-        "timestamp": time.time() - 864000,
-        "tags": ["tech-gear", "apple", "spatial-computing"],
-        "properties": {
-            "brand": "Apple",
-            "price_usd": 3499.00,
-            "storage": "512GB",
-            "location": "Apple Store 5th Ave NYC"
-        },
-        "relations": ["ent_201"],
-        "image_url": "https://images.unsplash.com/photo-1592478411213-6153e4ebc07d?w=500&q=80"
+universal_entities_store: List[Dict[str, Any]] = []
+
+@app.get("/api/v1/entities")
+async def get_universal_entities(domain: Optional[str] = None, tag: Optional[str] = None, q: Optional[str] = None):
+    """Query interconnected universal life activity entities with domain, tag, and search filtering."""
+    results = universal_entities_store
+    
+    if domain and domain.lower() != "all":
+        results = [e for e in results if e.get("domain", "").lower() == domain.lower()]
+        
+    if tag:
+        tag_clean = tag.strip().lower()
+        results = [e for e in results if any(tag_clean in t.lower() for t in e.get("tags", []))]
+        
+    if q:
+        q_clean = q.strip().lower()
+        results = [
+            e for e in results 
+            if q_clean in e.get("title", "").lower() 
+            or q_clean in e.get("subtitle", "").lower()
+            or any(q_clean in t.lower() for t in e.get("tags", []))
+            or any(q_clean in str(v).lower() for v in e.get("properties", {}).values())
+        ]
+        
+    return {
+        "status": "success",
+        "count": len(results),
+        "entities": sorted(results, key=lambda e: e.get("timestamp", 0), reverse=True)
     }
-]
+
+@app.post("/api/v1/entities")
+async def create_universal_entity(req: UniversalEntityRequest):
+    """Create a new interconnected activity entity with tags and custom properties."""
+    new_id = f"ent_{len(universal_entities_store)+101}_{int(time.time())}"
+    entity_data = {
+        "id": new_id,
+        "domain": req.domain.lower(),
+        "title": req.title,
+        "subtitle": req.subtitle or "",
+        "timestamp": req.timestamp or time.time(),
+        "tags": [t.strip().lower() for t in req.tags if t.strip()],
+        "properties": req.properties,
+        "relations": req.relations,
+        "image_url": req.image_url or "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80"
+    }
+    universal_entities_store.insert(0, entity_data)
+    await storage_engine.set("universal:entities", {"items": universal_entities_store})
+    return {"status": "success", "entity": entity_data}
+
+@app.put("/api/v1/entities/{entity_id}")
+async def update_universal_entity(entity_id: str, req: UniversalEntityRequest):
+    """Update an existing entity's tags, properties, title, subtitle, or domain."""
+    global universal_entities_store
+    for e in universal_entities_store:
+        if e.get("id") == entity_id:
+            e["domain"] = req.domain.lower()
+            e["title"] = req.title
+            e["subtitle"] = req.subtitle or ""
+            e["tags"] = [t.strip().lower() for t in req.tags if t.strip()]
+            e["properties"] = req.properties
+            e["relations"] = req.relations
+            if req.image_url:
+                e["image_url"] = req.image_url
+            await storage_engine.set("universal:entities", {"items": universal_entities_store})
+            return {"status": "updated", "entity": e}
+    raise HTTPException(status_code=404, detail=f"Entity '{entity_id}' not found")
 
 # Track API Route Aliases (Renamed from Scrobble to Track)
 

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import time
 from typing import Any, Dict, List, Optional
 import redis.asyncio as aioredis
@@ -21,7 +22,45 @@ class TieredStorageEngine:
         self.redis: Optional[aioredis.Redis] = None
         self.db_pool: Optional[Any] = None
         self._memory_cache: Dict[str, Dict[str, Any]] = {}
+        self.stats = {
+            "hot_hits": 0,
+            "cold_hits": 0,
+            "fallback_hits": 0,
+            "sets": 0,
+            "deletes": 0,
+            "errors": 0
+        }
+        self.db_file = os.path.join(os.path.dirname(__file__), "..", "..", "trakt_persistent_db.json")
+        self._load_disk_cache()
         self.is_connected = False
+
+    def _load_disk_cache(self) -> None:
+        """Load persistent cache from disk file."""
+        if os.path.exists(self.db_file):
+            try:
+                with open(self.db_file, "r") as f:
+                    raw = json.load(f)
+                    for k, v in raw.items():
+                        self._memory_cache[k] = {
+                            "data": v.get("data", v),
+                            "expires_at": time.time() + 86400 * 365,
+                            "is_cold": False,
+                            "size_bytes": 0
+                        }
+                logger.info(f"Loaded {len(self._memory_cache)} persistent keys from disk file '{self.db_file}'.")
+            except Exception as e:
+                logger.warning(f"Failed to load disk cache from {self.db_file}: {e}")
+
+    def _save_disk_cache(self) -> None:
+        """Save persistent cache to disk file."""
+        try:
+            raw_to_save = {}
+            for k, v in self._memory_cache.items():
+                raw_to_save[k] = v.get("data")
+            with open(self.db_file, "w") as f:
+                json.dump(raw_to_save, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to save disk cache to {self.db_file}: {e}")
         self.stats = {
             "hot_hits": 0,
             "cold_hits": 0,
@@ -133,10 +172,12 @@ class TieredStorageEngine:
                             ON CONFLICT (key) DO UPDATE
                             SET payload = EXCLUDED.payload, size_bytes = EXCLUDED.size_bytes, updated_at = NOW();
                         """, key, serialized, size_bytes)
+            self._save_disk_cache()
             return True
         except Exception as e:
             self.stats["errors"] += 1
             logger.error(f"Error setting key {key} in TieredStorageEngine: {e}")
+            self._save_disk_cache()
             return True
 
     async def get(self, key: str) -> Optional[Dict[str, Any]]:

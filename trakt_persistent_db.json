@@ -1431,5 +1431,43 @@
     "tags": [],
     "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
     "timestamp": 1786032040.027306
+  },
+  "device_code:dev_code_d3e399d238c4c2a6": {
+    "user_code": "TRKT-02C7",
+    "device_code": "dev_code_d3e399d238c4c2a6",
+    "verification_url": "https://trakt.tv/activate",
+    "expires_in": 600,
+    "interval": 5,
+    "created_at": 1786032770.6443336
+  },
+  "movie:log:log_a1c75428a2eb": {
+    "id": "log_a1c75428a2eb",
+    "movie_title": "Interstellar",
+    "release_year": 2014,
+    "watched_date": "2026-08-03",
+    "rating": 10.0,
+    "is_rewatch": true,
+    "liked": true,
+    "review": "Mind-bending masterpiece of time, gravity, and love.",
+    "tags": [
+      "sci-fi",
+      "favorite",
+      "nolan"
+    ],
+    "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
+    "timestamp": 1786032770.705794
+  },
+  "movie:log:log_071196dbf774": {
+    "id": "log_071196dbf774",
+    "movie_title": "Temp Movie",
+    "release_year": 2024,
+    "watched_date": "2026-08-03",
+    "rating": 7.0,
+    "is_rewatch": false,
+    "liked": false,
+    "review": "",
+    "tags": [],
+    "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
+    "timestamp": 1786032770.711127
   }
 }

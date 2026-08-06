@@ -37,8 +37,22 @@ class PluginEngine:
         self.storage_engine = storage_engine
         self.universal_store = universal_store_ref
         self.discovered_plugins: Dict[str, DynamicPlugin] = {}
+        self.fetcher_logs: List[Dict[str, Any]] = []
         self.is_running = False
         self._bg_task: Optional[asyncio.Task] = None
+
+    def add_log(self, plugin_id: str, level: str, message: str):
+        """Append log message to real-time fetcher log buffer."""
+        entry = {
+            "timestamp": time.time(),
+            "time_str": time.strftime("%H:%M:%S"),
+            "plugin_id": plugin_id,
+            "level": level,
+            "message": message
+        }
+        self.fetcher_logs.insert(0, entry)
+        if len(self.fetcher_logs) > 200:
+            self.fetcher_logs.pop()
 
     def scan_and_load_plugins(self) -> Dict[str, Any]:
         """Scan plugins directory and load manifest schemas."""
@@ -236,16 +250,19 @@ class PluginEngine:
                     plugin.items_fetched_count += 1
                     await self.storage_engine.set("universal:entities", {"items": self.universal_store})
 
-    async def trigger_historical_backfill(self, base_backend_url: str = "http://127.0.0.1:8000", days: int = 1) -> Dict[str, Any]:
+    async def trigger_historical_backfill(self, base_backend_url: str = "http://127.0.0.1:8000", days: int = 1, target_plugin_ids: Optional[List[str]] = None) -> Dict[str, Any]:
         """Backfill historical telemetry data from plugins into persistent database."""
-        logger.info(f"Starting Historical Data Backfill for past {days} day(s)...")
+        logger.info(f"Starting Historical Data Backfill for past {days} day(s) for plugins: {target_plugin_ids or 'ALL'}...")
+        self.add_log("system", "INFO", f"Triggered historical data backfill ({days} days) for plugins: {target_plugin_ids or 'ALL'}")
         total_backfilled = 0
         details = {}
 
         async with httpx.AsyncClient(timeout=8.0) as client:
             for p_id, plugin in list(self.discovered_plugins.items()):
+                if target_plugin_ids and p_id.lower() not in [tp.lower() for tp in target_plugin_ids]:
+                    continue
+
                 try:
-                    # Query summary endpoint
                     target_url = plugin.fetch_url
                     if not target_url.startswith("http"):
                         target_url = f"{base_backend_url}{target_url}"
@@ -258,10 +275,13 @@ class PluginEngine:
                         added = len(self.universal_store) - count_before
                         total_backfilled += added
                         details[p_id] = f"Backfilled {added} historical records"
+                        self.add_log(p_id, "INFO", f"Historical backfill inserted {added} records into DB")
                     else:
                         details[p_id] = f"HTTP {resp.status_code}"
+                        self.add_log(p_id, "WARNING", f"Historical backfill HTTP {resp.status_code}")
                 except Exception as ex:
                     details[p_id] = f"Error: {str(ex)}"
+                    self.add_log(p_id, "ERROR", f"Historical backfill error: {str(ex)}")
 
         await self.storage_engine.set("universal:entities", {"items": self.universal_store})
         await event_bus.publish("DB_MUTATION", {"backfilled_days": days, "total": total_backfilled})

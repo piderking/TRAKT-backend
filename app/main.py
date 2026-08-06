@@ -118,10 +118,28 @@ async def toggle_plugin_fetcher(plugin_id: str):
 
 from app.core.events import event_bus, event_generator
 
+class HistoricalBackfillRequest(BaseModel):
+    days: int = Field(1, description="Historical range increment in days")
+    plugin_ids: Optional[List[str]] = Field(None, description="Optional list of specific plugin IDs to backfill")
+
+@app.get("/api/v1/plugins/fetchers/logs")
+async def get_fetcher_logs():
+    """Get live execution logs from background fetchers."""
+    return {
+        "status": "success",
+        "count": len(plugin_engine.fetcher_logs),
+        "logs": plugin_engine.fetcher_logs
+    }
+
 @app.post("/api/v1/plugins/fetchers/historical")
-async def trigger_historical_fetch(days: int = Query(1, description="Historical range increment in days")):
-    """Trigger historical data backfill engine across all registered plugins."""
-    result = await plugin_engine.trigger_historical_backfill(days=days)
+async def trigger_historical_fetch(
+    days: int = Query(1, description="Historical range increment in days"),
+    req: Optional[HistoricalBackfillRequest] = Body(None)
+):
+    """Trigger historical data backfill engine across all or selected plugins."""
+    target_days = req.days if req and req.days else days
+    target_plugins = req.plugin_ids if req and req.plugin_ids else None
+    result = await plugin_engine.trigger_historical_backfill(days=target_days, target_plugin_ids=target_plugins)
     return result
 
 @app.get("/api/v1/letterboxd/summary")

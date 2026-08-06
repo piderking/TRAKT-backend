@@ -21,8 +21,8 @@ static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-STEAM_API_KEY = os.getenv("STEAM_API_KEY", "8F28EB726EC9374B02C8BB7753FA30A5")
-STEAM_ID_64 = os.getenv("STEAM_ID_64", "76561199053737486")
+STEAM_API_KEY = os.getenv("STEAM_API_KEY", "")
+STEAM_ID_64 = os.getenv("STEAM_ID_64", "")
 
 class GameScrobblePayload(BaseModel):
     game_title: str = Field(..., description="Name of the game")

@@ -839,9 +839,19 @@ async def get_steam_summary():
     except Exception as e:
         logger.warning(f"Plugin Steam unreachable: {e}. Fetching directly from Steam Web API...")
 
-    # Direct Steam Web API query fallback
-    key = "8F28EB726EC9374B02C8BB7753FA30A5"
-    sid = "76561199053737486"
+    # Direct Steam Web API query fallback using dynamic DB config
+    steam_cfg = plugin_config_store.get("steam", {})
+    key = steam_cfg.get("steam_api_key") or os.getenv("STEAM_API_KEY", "")
+    sid = steam_cfg.get("steam_profile_id") or os.getenv("STEAM_ID_64", "")
+
+    if not key or not sid:
+        return {
+            "source": "gateway-steam-unconfigured",
+            "now_playing": {"player_name": "", "game_title": "Steam Unconfigured", "app_id": 0, "is_playing": False},
+            "stats": {"games_owned": 0, "total_hours_played": 0.0, "recent_2weeks_hours": 0.0, "top_games": []},
+            "recent_games": []
+        }
+
     try:
         async with httpx.AsyncClient(timeout=4.0) as client:
             sum_resp = await client.get(f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={key}&steamids={sid}")

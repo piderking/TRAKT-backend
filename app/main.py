@@ -630,11 +630,12 @@ async def get_trending_movies():
 
 @app.get("/api/v1/movies/search")
 async def search_movies(q: str = ""):
-    """Search movies by title for instant lookup and quick logging."""
+    """Search movies by title using TMDB or iTunes Live Movie API for adaptive lookup and auto-fill."""
     query = q.strip().lower()
     if not query:
         return await get_trending_movies()
 
+    # 1. Try TMDB API if key provided
     if TMDB_API_KEY:
         try:
             url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={query}"
@@ -642,24 +643,52 @@ async def search_movies(q: str = ""):
                 resp = await client.get(url)
                 if resp.status_code == 200:
                     results = resp.json().get("results", [])
-                    formatted = []
-                    for m in results[:10]:
-                        formatted.append({
-                            "id": m.get("id"),
-                            "title": m.get("title"),
-                            "release_year": int(m.get("release_date", "2024")[:4]) if m.get("release_date") else 2024,
-                            "rating": round(m.get("vote_average", 8.0), 1),
-                            "overview": m.get("overview", ""),
-                            "poster_url": f"https://image.tmdb.org/t/p/w500{m.get('poster_path')}" if m.get("poster_path") else "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
-                            "genre": "Movie"
-                        })
-                    return {"status": "success", "query": q, "source": "tmdb-api", "results": formatted}
+                    if results:
+                        formatted = []
+                        for m in results[:10]:
+                            formatted.append({
+                                "id": m.get("id"),
+                                "title": m.get("title"),
+                                "release_year": int(m.get("release_date", "2024")[:4]) if m.get("release_date") else 2024,
+                                "rating": round(m.get("vote_average", 8.0), 1),
+                                "overview": m.get("overview", ""),
+                                "poster_url": f"https://image.tmdb.org/t/p/w500{m.get('poster_path')}" if m.get("poster_path") else "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
+                                "director": "Featured Director",
+                                "genre": "Cinema"
+                            })
+                        return {"status": "success", "query": q, "source": "tmdb-api", "results": formatted}
         except Exception as e:
             logger.warning(f"TMDB search API fetch failed: {e}")
 
+    # 2. Live iTunes Movie Search API (Free, no API key required)
+    try:
+        url = f"https://itunes.apple.com/search?term={query}&entity=movie&limit=10"
+        async with httpx.AsyncClient(timeout=4.0) as client:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                results = resp.json().get("results", [])
+                if results:
+                    formatted = []
+                    for m in results:
+                        release_year = int(m.get("releaseDate", "2024")[:4]) if m.get("releaseDate") else 2024
+                        art = m.get("artworkUrl100", "").replace("100x100bb", "600x600bb")
+                        formatted.append({
+                            "id": m.get("trackId"),
+                            "title": m.get("trackName"),
+                            "release_year": release_year,
+                            "rating": 8.5,
+                            "overview": m.get("longDescription") or m.get("shortDescription") or "Movie entry fetched live.",
+                            "poster_url": art or "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
+                            "director": m.get("artistName", "Unknown Director"),
+                            "genre": m.get("primaryGenreName", "Cinema")
+                        })
+                    return {"status": "success", "query": q, "source": "itunes-live-api", "results": formatted}
+    except Exception as ex:
+        logger.warning(f"iTunes Movie Search API failed: {ex}")
+
     # Fallback search against catalog
-    matched = [m for m in TRENDING_MOVIES_CATALOG if query in m["title"].lower() or query in m["genre"].lower()]
-    return {"status": "success", "query": q, "source": "trakt-catalog", "results": matched}
+    filtered = [m for m in TRENDING_MOVIES_CATALOG if query in m.get("title", "").lower()]
+    return {"status": "success", "query": q, "source": "trakt-catalog", "results": filtered}
 
 @app.get("/api/v1/movies/diary")
 async def get_movie_diary():

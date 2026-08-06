@@ -27,23 +27,35 @@ PLUGIN_HEALTH_URL = os.getenv("PLUGIN_HEALTH_URL", "http://plugin-health:8000")
 PLUGIN_LETTERBOXD_URL = os.getenv("PLUGIN_LETTERBOXD_URL", "http://plugin-letterboxd:8000")
 PLUGIN_SPOTIFY_URL = os.getenv("PLUGIN_SPOTIFY_URL", "http://plugin-spotify:8000")
 PLUGIN_STEAM_URL = os.getenv("PLUGIN_STEAM_URL", "http://plugin-steam:8000")
-TRAKT_CLIENT_ID = os.getenv("TRAKT_CLIENT_ID", "your_trakt_client_id")
-TRAKT_CLIENT_SECRET = os.getenv("TRAKT_CLIENT_SECRET", "your_trakt_client_secret")
+from app.core.plugin_engine import PluginEngine
 
 storage_engine = TieredStorageEngine(redis_url=REDIS_URL, db_url=DATABASE_URL)
 START_TIME = time.time()
 
+plugins_base_path = os.path.join(os.path.dirname(__file__), "..", "plugins")
+universal_entities_store: List[Dict[str, Any]] = []
+plugin_engine = PluginEngine(plugins_base_path, storage_engine, universal_entities_store)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing Trakt Gateway Core Services...")
+    logger.info("Initializing Trakt Gateway Core Services & Dynamic Plugin Engine...")
     await storage_engine.connect()
+    
+    # Load entities from disk/database cache
+    cached_entities = await storage_engine.get("universal:entities")
+    if cached_entities and "items" in cached_entities:
+        universal_entities_store.extend(cached_entities["items"])
+
+    plugin_engine.scan_and_load_plugins()
+    await plugin_engine.start_background_fetchers()
     yield
     logger.info("Shutting down Trakt Gateway Core Services...")
+    await plugin_engine.stop_background_fetchers()
     await storage_engine.disconnect()
 
 app = FastAPI(
     title="Trakt Gateway API",
-    description="Core API Gateway & Tiered Storage Engine for Trakt Modular Ecosystem",
+    description="Core API Gateway & Dynamic Plugin Engine for Trakt Modular Ecosystem",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -65,6 +77,52 @@ class DeviceTokenRequest(BaseModel):
     code: Optional[str] = Field(default=None, description="Device code or user code")
     client_id: Optional[str] = Field(default=None, description="Client ID")
     client_secret: Optional[str] = Field(default=None, description="Client Secret")
+
+@app.get("/api/v1/plugins/discovered")
+async def get_discovered_plugins():
+    """List all dynamically scanned plugin directories, schemas, and background fetcher statuses."""
+    return {
+        "status": "success",
+        "fetcher_loop_running": plugin_engine.is_running,
+        "count": len(plugin_engine.discovered_plugins),
+        "plugins": plugin_engine.get_plugins_status()
+    }
+
+class CustomPluginRegisterRequest(BaseModel):
+    plugin_id: str = Field(..., description="Unique plugin folder ID")
+    name: str = Field(..., description="Plugin Name")
+    domain: str = Field("custom", description="Entity domain")
+    fetch_url: str = Field(..., description="Background fetcher URL endpoint")
+    schema_fields: Dict[str, Any] = Field(default_factory=dict, description="Database entity JSON schema")
+
+@app.post("/api/v1/plugins/register")
+async def register_custom_plugin_directory(req: CustomPluginRegisterRequest):
+    """Dynamically register a new plugin directory with schema and background fetcher URL."""
+    p_obj = plugin_engine.register_custom_plugin(
+        plugin_id=req.plugin_id,
+        domain=req.domain,
+        name=req.name,
+        fetch_url=req.fetch_url,
+        schema=req.schema_fields
+    )
+    return {"status": "registered", "plugin": p_obj.id, "fetch_url": p_obj.fetch_url}
+
+@app.post("/api/v1/plugins/toggle/{plugin_id}")
+async def toggle_plugin_fetcher(plugin_id: str):
+    """Toggle background fetcher loop for a specific plugin."""
+    p = plugin_engine.discovered_plugins.get(plugin_id.lower())
+    if not p:
+        raise HTTPException(status_code=404, detail=f"Plugin '{plugin_id}' not found")
+    p.enabled = not p.enabled
+    return {"status": "toggled", "plugin": p.id, "enabled": p.enabled}
+
+from app.core.events import event_bus, event_generator
+
+@app.get("/api/v1/events/stream")
+async def stream_reactive_events():
+    """Real-Time Reactive Server-Sent Events (SSE) stream broadcasting instant DB mutations."""
+    q = event_bus.subscribe()
+    return StreamingResponse(event_generator(q), media_type="text/event-stream")
 
 @app.get("/health")
 async def health_check():
@@ -1011,6 +1069,7 @@ async def create_universal_entity(req: UniversalEntityRequest):
     }
     universal_entities_store.insert(0, entity_data)
     await storage_engine.set("universal:entities", {"items": universal_entities_store})
+    await event_bus.publish("ENTITY_CREATED", entity_data)
     return {"status": "success", "entity": entity_data}
 
 @app.put("/api/v1/entities/{entity_id}")

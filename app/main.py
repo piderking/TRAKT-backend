@@ -904,12 +904,164 @@ async def get_steam_summary():
     except Exception as ex:
         logger.error(f"Direct Steam API query failed: {ex}")
 
-    return {
-        "source": "gateway-fallback-offline",
-        "now_playing": {"player_name": "muncher", "game_title": "Offline / Not in-game", "app_id": 0, "is_playing": False},
-        "stats": {"games_owned": 70, "total_hours_played": 0.0, "recent_2weeks_hours": 0.0, "top_games": []},
-        "recent_games": []
+# --- Universal Interconnected Life Activity Entity Architecture ---
+
+class UniversalEntityRequest(BaseModel):
+    domain: str = Field("movie", description="Entity domain: music, movie, gaming, health, coding, custom")
+    title: str = Field(..., description="Entity title")
+    subtitle: Optional[str] = Field(None, description="Artist, Director, Developer, etc.")
+    timestamp: Optional[float] = Field(default_factory=time.time)
+    tags: List[str] = Field(default_factory=list, description="Tags, e.g. ['spotify'], ['theatre', 'imax'], ['steam']")
+    properties: Dict[str, Any] = Field(default_factory=dict, description="Custom key-value properties (location, director, rating, bpm, hours)")
+    relations: List[str] = Field(default_factory=list, description="Linked entity IDs")
+    image_url: Optional[str] = Field(None, description="Banner / poster image URL")
+
+universal_entities_store: List[Dict[str, Any]] = [
+    {
+        "id": "ent_101",
+        "domain": "movie",
+        "title": "The Odyssey",
+        "subtitle": "Christopher Nolan",
+        "timestamp": time.time() - 3600,
+        "tags": ["theatre", "imax-70mm", "cinema", "nolan"],
+        "properties": {
+            "director": "Christopher Nolan",
+            "location": "AMC Lincoln Square IMAX 70mm",
+            "rating": 10.0,
+            "format": "70mm Film Print",
+            "rewatch": False
+        },
+        "relations": ["ent_102"],
+        "image_url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80"
+    },
+    {
+        "id": "ent_102",
+        "domain": "music",
+        "title": "Interstellar Original Soundtrack",
+        "subtitle": "Hans Zimmer",
+        "timestamp": time.time() - 7200,
+        "tags": ["spotify", "soundtrack", "ambient", "vinyl"],
+        "properties": {
+            "platform": "Spotify Web API",
+            "bpm": 110,
+            "energy": 0.85,
+            "duration_formatted": "4:20"
+        },
+        "relations": ["ent_101"],
+        "image_url": "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80"
+    },
+    {
+        "id": "ent_103",
+        "domain": "gaming",
+        "title": "Marvel Rivals",
+        "subtitle": "NetEase Games",
+        "timestamp": time.time() - 14400,
+        "tags": ["steam", "pc", "multiplayer", "muncher"],
+        "properties": {
+            "steam_app_id": 2767030,
+            "hours_played": 806.0,
+            "recent_2weeks_hours": 16.7,
+            "location": "Gaming PC Setup"
+        },
+        "relations": [],
+        "image_url": "https://cdn.cloudflare.steamstatic.com/steam/apps/2767030/header.jpg"
+    },
+    {
+        "id": "ent_104",
+        "domain": "health",
+        "title": "Daily Vitals & Biometrics",
+        "subtitle": "Android Health Connect Daemon",
+        "timestamp": time.time() - 1800,
+        "tags": ["health-connect", "android", "pixel-8-pro"],
+        "properties": {
+            "steps": 8840,
+            "heart_rate_bpm": 74,
+            "active_calories_kcal": 465,
+            "sleep_hours": 7.8,
+            "spo2": 99.0
+        },
+        "relations": [],
+        "image_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500&q=80"
+    },
+    {
+        "id": "ent_105",
+        "domain": "coding",
+        "title": "TRAKT Unified Architecture Engine",
+        "subtitle": "Antigravity AI CLI & WakaTime",
+        "timestamp": time.time() - 900,
+        "tags": ["wakatime", "antigravity", "python", "typescript"],
+        "properties": {
+            "prompt_tokens": 142500,
+            "completion_tokens": 48200,
+            "active_language": "Python / TypeScript",
+            "today_seconds": 18420
+        },
+        "relations": ["ent_101", "ent_103"],
+        "image_url": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500&q=80"
     }
+]
+
+@app.get("/api/v1/entities")
+async def get_universal_entities(domain: Optional[str] = None, tag: Optional[str] = None, q: Optional[str] = None):
+    """Query interconnected universal life activity entities with domain, tag, and search filtering."""
+    results = universal_entities_store
+    
+    if domain and domain.lower() != "all":
+        results = [e for e in results if e.get("domain", "").lower() == domain.lower()]
+        
+    if tag:
+        tag_clean = tag.strip().lower()
+        results = [e for e in results if any(tag_clean in t.lower() for t in e.get("tags", []))]
+        
+    if q:
+        q_clean = q.strip().lower()
+        results = [
+            e for e in results 
+            if q_clean in e.get("title", "").lower() 
+            or q_clean in e.get("subtitle", "").lower()
+            or any(q_clean in t.lower() for t in e.get("tags", []))
+            or any(q_clean in str(v).lower() for v in e.get("properties", {}).values())
+        ]
+        
+    return {
+        "status": "success",
+        "count": len(results),
+        "entities": sorted(results, key=lambda e: e.get("timestamp", 0), reverse=True)
+    }
+
+@app.post("/api/v1/entities")
+async def create_universal_entity(req: UniversalEntityRequest):
+    """Create a new interconnected activity entity with tags and custom properties."""
+    new_id = f"ent_{len(universal_entities_store)+101}_{int(time.time())}"
+    entity_data = {
+        "id": new_id,
+        "domain": req.domain.lower(),
+        "title": req.title,
+        "subtitle": req.subtitle or "",
+        "timestamp": req.timestamp or time.time(),
+        "tags": [t.strip().lower() for t in req.tags if t.strip()],
+        "properties": req.properties,
+        "relations": req.relations,
+        "image_url": req.image_url or "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80"
+    }
+    universal_entities_store.insert(0, entity_data)
+    return {"status": "success", "entity": entity_data}
+
+@app.get("/api/v1/entities/{entity_id}")
+async def get_universal_entity_by_id(entity_id: str):
+    """Get single entity details and its interconnected relations."""
+    for e in universal_entities_store:
+        if e.get("id") == entity_id:
+            related_items = [r for r in universal_entities_store if r.get("id") in e.get("relations", [])]
+            return {"status": "success", "entity": e, "related_entities": related_items}
+    raise HTTPException(status_code=404, detail=f"Entity '{entity_id}' not found")
+
+@app.delete("/api/v1/entities/{entity_id}")
+async def delete_universal_entity(entity_id: str):
+    """Delete an entity."""
+    global universal_entities_store
+    universal_entities_store = [e for e in universal_entities_store if e.get("id") != entity_id]
+    return {"status": "deleted", "id": entity_id}
 
 @app.get("/api/v1/steam/now-playing")
 async def get_steam_now_playing():

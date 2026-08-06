@@ -402,23 +402,26 @@ async def get_oauth_userinfo(token: str):
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-# --- Plugin Configuration & API Keys Settings Endpoints ---
+plugin_config_store: Dict[str, Dict[str, Any]] = {}
 
 @app.get("/api/v1/plugins/config")
 @app.get("/api/v1/plugins/config/{plugin_id}")
 async def get_plugin_config(plugin_id: str):
     """Get stored API keys and configuration credentials for a plugin."""
-    config = oauth_server.get_plugin_config(plugin_id)
+    cached = await storage_engine.get(f"plugin:config:{plugin_id}")
+    if cached:
+        plugin_config_store[plugin_id] = cached
+    config = plugin_config_store.get(plugin_id, {}) or oauth_server.get_plugin_config(plugin_id)
     return {"plugin_id": plugin_id, "config": config}
 
 @app.post("/api/v1/plugins/config")
 @app.post("/api/v1/plugins/config/{plugin_id}")
 async def set_plugin_config(plugin_id: str, config: Dict[str, str] = Body(...)):
-    """Save API keys (e.g., WAKATIME_API_KEY, TRAKT_CLIENT_ID) for a plugin."""
-    updated = oauth_server.set_plugin_config(plugin_id, config)
-    # Also sync to TieredStorageEngine for persistence
-    await storage_engine.set(f"plugin:config:{plugin_id}", updated, ttl=86400 * 30)
-    return {"status": "saved", "plugin_id": plugin_id, "config": updated}
+    """Save API keys (e.g., STEAM_API_KEY, SPOTIFY_CLIENT_ID) for a plugin."""
+    plugin_config_store[plugin_id] = config
+    oauth_server.set_plugin_config(plugin_id, config)
+    await storage_engine.set(f"plugin:config:{plugin_id}", config, ttl=86400 * 365)
+    return {"status": "saved", "plugin_id": plugin_id, "config": config}
 
 @app.post("/api/v1/system/flush")
 async def flush_all_dummy_data():
@@ -954,7 +957,8 @@ async def get_steam_summary():
             own_resp = await client.get(f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={key}&steamid={sid}&format=json&include_appinfo=1&include_played_free_games=1")
             rec_resp = await client.get(f"https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key={key}&steamid={sid}")
 
-            p_data = sum_resp.json().get("response", {}).get("players", [{}])[0] if sum_resp.status_code == 200 else {}
+            players = sum_resp.json().get("response", {}).get("players", []) if sum_resp.status_code == 200 else []
+            p_data = players[0] if players else {}
             o_data = own_resp.json().get("response", {}) if own_resp.status_code == 200 else {}
             r_data = rec_resp.json().get("response", {}) if rec_resp.status_code == 200 else {}
 

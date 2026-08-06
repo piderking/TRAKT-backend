@@ -1279,5 +1279,81 @@
     "tags": [],
     "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
     "timestamp": 1786003084.7190733
+  },
+  "device_code:dev_code_9a815328d1bb5cb9": {
+    "user_code": "TRKT-5977",
+    "device_code": "dev_code_9a815328d1bb5cb9",
+    "verification_url": "https://trakt.tv/activate",
+    "expires_in": 600,
+    "interval": 5,
+    "created_at": 1786031508.59755
+  },
+  "movie:log:log_471dc7ca54a5": {
+    "id": "log_471dc7ca54a5",
+    "movie_title": "Interstellar",
+    "release_year": 2014,
+    "watched_date": "2026-08-03",
+    "rating": 10.0,
+    "is_rewatch": true,
+    "liked": true,
+    "review": "Mind-bending masterpiece of time, gravity, and love.",
+    "tags": [
+      "sci-fi",
+      "favorite",
+      "nolan"
+    ],
+    "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
+    "timestamp": 1786031508.6507542
+  },
+  "movie:log:log_9b75c66b40f3": {
+    "id": "log_9b75c66b40f3",
+    "movie_title": "Temp Movie",
+    "release_year": 2024,
+    "watched_date": "2026-08-03",
+    "rating": 7.0,
+    "is_rewatch": false,
+    "liked": false,
+    "review": "",
+    "tags": [],
+    "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
+    "timestamp": 1786031508.6536477
+  },
+  "device_code:dev_code_290c24aa501229ee": {
+    "user_code": "TRKT-7E50",
+    "device_code": "dev_code_290c24aa501229ee",
+    "verification_url": "https://trakt.tv/activate",
+    "expires_in": 600,
+    "interval": 5,
+    "created_at": 1786031841.5847278
+  },
+  "movie:log:log_3e4edf81a429": {
+    "id": "log_3e4edf81a429",
+    "movie_title": "Interstellar",
+    "release_year": 2014,
+    "watched_date": "2026-08-03",
+    "rating": 10.0,
+    "is_rewatch": true,
+    "liked": true,
+    "review": "Mind-bending masterpiece of time, gravity, and love.",
+    "tags": [
+      "sci-fi",
+      "favorite",
+      "nolan"
+    ],
+    "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
+    "timestamp": 1786031841.6340146
+  },
+  "movie:log:log_940140928c22": {
+    "id": "log_940140928c22",
+    "movie_title": "Temp Movie",
+    "release_year": 2024,
+    "watched_date": "2026-08-03",
+    "rating": 7.0,
+    "is_rewatch": false,
+    "liked": false,
+    "review": "",
+    "tags": [],
+    "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80",
+    "timestamp": 1786031841.642116
   }
 }

@@ -359,6 +359,22 @@ async def set_plugin_config(plugin_id: str, config: Dict[str, str] = Body(...)):
     await storage_engine.set(f"plugin:config:{plugin_id}", updated, ttl=86400 * 30)
     return {"status": "saved", "plugin_id": plugin_id, "config": updated}
 
+@app.post("/api/v1/system/flush")
+async def flush_all_dummy_data():
+    """Flush all dummy seed data across Gateway and Microservice Plugins."""
+    global movie_diary_store
+    movie_diary_store.clear()
+    
+    # Notify microservices if reachable
+    for plugin_url in [PLUGIN_STEAM_URL, PLUGIN_SPOTIFY_URL, PLUGIN_HEALTH_URL, PLUGIN_WAKATIME_URL]:
+        try:
+            async with httpx.AsyncClient(timeout=2.0) as client:
+                await client.post(f"{plugin_url}/telemetry/flush")
+        except Exception:
+            pass
+
+    return {"status": "flushed", "message": "All ecosystem dummy data flushed. Ready for live user data."}
+
 # --- Letterboxd Data Export Zip Importer Proxy Endpoints ---
 
 @app.get("/api/v1/import/letterboxd/summary")
@@ -409,34 +425,7 @@ class MovieLogRequest(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Custom tags")
     poster_url: Optional[str] = Field(None, description="Movie poster URL")
 
-movie_diary_store: list[dict[str, Any]] = [
-    {
-        "id": "log_1",
-        "movie_title": "Dune: Part Two",
-        "release_year": 2024,
-        "watched_date": "2026-08-03",
-        "rating": 9.5,
-        "is_rewatch": True,
-        "liked": True,
-        "review": "Visually breathtaking sci-fi masterpiece. Denis Villeneuve is operating at the absolute peak of cinema.",
-        "tags": ["cinema", "imax-70mm", "favorite"],
-        "poster_url": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
-        "timestamp": time.time() - 3600
-    },
-    {
-        "id": "log_2",
-        "movie_title": "Oppenheimer",
-        "release_year": 2023,
-        "watched_date": "2026-08-01",
-        "rating": 9.0,
-        "is_rewatch": False,
-        "liked": True,
-        "review": "Incredible sound design and editing. Cillian Murphy gives a career-defining performance.",
-        "tags": ["biopic", "4k-uhd"],
-        "poster_url": "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=500&q=80",
-        "timestamp": time.time() - 86400
-    }
-]
+movie_diary_store: list[dict[str, Any]] = []
 
 @app.get("/api/v1/movies/diary")
 async def get_movie_diary():

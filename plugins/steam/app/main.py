@@ -30,46 +30,22 @@ class GameScrobblePayload(BaseModel):
 
 steam_store: Dict[str, Any] = {
     "now_playing": {
-        "game_title": "Cyberpunk 2077",
-        "app_id": 1091500,
-        "is_playing": True,
-        "session_playtime_mins": 85,
-        "total_playtime_hours": 142.8,
-        "header_image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80",
-        "achievements_unlocked_today": 3
+        "game_title": "None",
+        "app_id": 0,
+        "is_playing": False,
+        "session_playtime_mins": 0,
+        "total_playtime_hours": 0.0,
+        "header_image": "",
+        "achievements_unlocked_today": 0
     },
     "stats": {
-        "games_owned": 184,
-        "total_hours_played": 1420.5,
-        "recent_2weeks_hours": 24.6,
-        "total_achievements": 842,
-        "top_games": [
-            {"game_title": "Cyberpunk 2077", "hours": 142.8, "app_id": 1091500},
-            {"game_title": "Elden Ring", "hours": 210.4, "app_id": 1245620},
-            {"game_title": "Counter-Strike 2", "hours": 480.2, "app_id": 730},
-            {"game_title": "The Witcher 3: Wild Hunt", "hours": 185.0, "app_id": 292030}
-        ]
+        "games_owned": 0,
+        "total_hours_played": 0.0,
+        "recent_2weeks_hours": 0.0,
+        "total_achievements": 0,
+        "top_games": []
     },
-    "recent_games": [
-        {
-            "game_title": "Cyberpunk 2077",
-            "playtime_2weeks_hours": 12.4,
-            "total_hours": 142.8,
-            "last_played": "Today at 11:20 AM"
-        },
-        {
-            "game_title": "Elden Ring",
-            "playtime_2weeks_hours": 8.2,
-            "total_hours": 210.4,
-            "last_played": "Yesterday"
-        },
-        {
-            "game_title": "Balatro",
-            "playtime_2weeks_hours": 4.0,
-            "total_hours": 38.5,
-            "last_played": "2 days ago"
-        }
-    ]
+    "recent_games": []
 }
 
 @app.get("/health")

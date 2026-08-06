@@ -33,55 +33,28 @@ class ScrobblePayload(BaseModel):
 
 spotify_store: Dict[str, Any] = {
     "now_playing": {
-        "track_name": "Starboy",
-        "artist_name": "The Weeknd ft. Daft Punk",
-        "album_name": "Starboy",
-        "duration_ms": 230400,
-        "progress_ms": 142000,
-        "is_playing": True,
-        "album_art_url": "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&q=80",
-        "spotify_uri": "spotify:track:7qiZ28P1WUZyWq23A8q1D3",
+        "track_name": "No Track Playing",
+        "artist_name": "",
+        "album_name": "",
+        "duration_ms": 0,
+        "progress_ms": 0,
+        "is_playing": False,
+        "album_art_url": "",
+        "spotify_uri": "",
         "audio_features": {
-            "bpm": 186,
-            "energy": 0.82,
-            "danceability": 0.68,
-            "valence": 0.54
+            "bpm": 0,
+            "energy": 0.0,
+            "danceability": 0.0,
+            "valence": 0.0
         }
     },
     "stats": {
-        "tracks_played_today": 34,
-        "total_listening_minutes": 118,
-        "top_artists": [
-          {"name": "The Weeknd", "play_count": 14},
-          {"name": "Daft Punk", "play_count": 8},
-          {"name": "Kendrick Lamar", "play_count": 6},
-          {"name": "Frank Ocean", "play_count": 4}
-        ],
-        "top_genres": ["Alternative R&B", "Synthwave", "Hip-Hop", "Indie Electronic"]
+        "tracks_played_today": 0,
+        "total_listening_minutes": 0,
+        "top_artists": [],
+        "top_genres": []
     },
-    "history": [
-        {
-            "track_name": "Blinding Lights",
-            "artist_name": "The Weeknd",
-            "album_name": "After Hours",
-            "played_at": "11:05 AM",
-            "duration_formatted": "3:20"
-        },
-        {
-            "track_name": "Get Lucky",
-            "artist_name": "Daft Punk ft. Pharrell Williams",
-            "album_name": "Random Access Memories",
-            "played_at": "10:42 AM",
-            "duration_formatted": "4:08"
-        },
-        {
-            "track_name": "N95",
-            "artist_name": "Kendrick Lamar",
-            "album_name": "Mr. Morale & the Big Steppers",
-            "played_at": "10:15 AM",
-            "duration_formatted": "3:15"
-        }
-    ]
+    "history": []
 }
 
 @app.get("/health")

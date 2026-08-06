@@ -552,18 +552,78 @@ async def get_steam_summary():
             if resp.status_code == 200:
                 return resp.json()
     except Exception as e:
-        logger.warning(f"Plugin Steam unreachable: {e}. Returning fallback summary...")
+        logger.warning(f"Plugin Steam unreachable: {e}. Fetching directly from Steam Web API...")
+
+    # Direct Steam Web API query fallback
+    key = "8F28EB726EC9374B02C8BB7753FA30A5"
+    sid = "76561199053737486"
+    try:
+        async with httpx.AsyncClient(timeout=4.0) as client:
+            sum_resp = await client.get(f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={key}&steamids={sid}")
+            own_resp = await client.get(f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={key}&steamid={sid}&format=json&include_appinfo=1&include_played_free_games=1")
+            rec_resp = await client.get(f"https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key={key}&steamid={sid}")
+
+            p_data = sum_resp.json().get("response", {}).get("players", [{}])[0] if sum_resp.status_code == 200 else {}
+            o_data = own_resp.json().get("response", {}) if own_resp.status_code == 200 else {}
+            r_data = rec_resp.json().get("response", {}) if rec_resp.status_code == 200 else {}
+
+            all_games = o_data.get("games", [])
+            tot_mins = sum(g.get("playtime_forever", 0) for g in all_games)
+            rec_games_raw = r_data.get("games", [])
+            rec_2w_mins = sum(rg.get("playtime_2weeks", 0) for rg in rec_games_raw)
+
+            sorted_games = sorted(all_games, key=lambda g: g.get("playtime_forever", 0), reverse=True)
+            top_games = [
+                {
+                    "game_title": g.get("name"),
+                    "app_id": g.get("appid"),
+                    "hours": round(g.get("playtime_forever", 0) / 60.0, 1),
+                    "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{g.get('appid')}/header.jpg"
+                } for g in sorted_games[:6] if g.get("playtime_forever", 0) > 0
+            ]
+
+            recent_games = [
+                {
+                    "game_title": rg.get("name"),
+                    "app_id": rg.get("appid"),
+                    "playtime_2weeks_hours": round(rg.get("playtime_2weeks", 0) / 60.0, 1),
+                    "total_hours": round(rg.get("playtime_forever", 0) / 60.0, 1),
+                    "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{rg.get('appid')}/header.jpg",
+                    "last_played": "Recent (Past 2 Weeks)"
+                } for rg in rec_games_raw
+            ]
+
+            game_title = p_data.get("gameextrainfo")
+            game_id = p_data.get("gameid")
+
+            return {
+                "source": "gateway-direct-steam-api",
+                "steam_id": sid,
+                "now_playing": {
+                    "player_name": p_data.get("personaname", "muncher"),
+                    "avatar_url": p_data.get("avatarfull", ""),
+                    "profile_url": p_data.get("profileurl", ""),
+                    "game_title": game_title or "Offline / Not in-game",
+                    "app_id": int(game_id) if game_id and str(game_id).isdigit() else 0,
+                    "is_playing": bool(game_title),
+                    "header_image": f"https://cdn.cloudflare.steamstatic.com/steam/apps/{game_id}/header.jpg" if game_id else ""
+                },
+                "stats": {
+                    "games_owned": o_data.get("game_count", len(all_games)),
+                    "total_hours_played": round(tot_mins / 60.0, 1),
+                    "recent_2weeks_hours": round(rec_2w_mins / 60.0, 1),
+                    "top_games": top_games
+                },
+                "recent_games": recent_games
+            }
+    except Exception as ex:
+        logger.error(f"Direct Steam API query failed: {ex}")
 
     return {
-        "source": "gateway-steam-fallback",
-        "now_playing": {
-            "game_title": "Cyberpunk 2077",
-            "app_id": 1091500,
-            "is_playing": True,
-            "session_playtime_mins": 85,
-            "total_playtime_hours": 142.8
-        },
-        "stats": {"games_owned": 184, "total_hours_played": 1420.5, "recent_2weeks_hours": 24.6}
+        "source": "gateway-fallback-offline",
+        "now_playing": {"player_name": "muncher", "game_title": "Offline / Not in-game", "app_id": 0, "is_playing": False},
+        "stats": {"games_owned": 70, "total_hours_played": 0.0, "recent_2weeks_hours": 0.0, "top_games": []},
+        "recent_games": []
     }
 
 @app.get("/api/v1/steam/now-playing")

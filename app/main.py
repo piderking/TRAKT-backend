@@ -630,7 +630,7 @@ async def get_trending_movies():
 
 @app.get("/api/v1/movies/search")
 async def search_movies(q: str = ""):
-    """Search movies by title using TMDB or iTunes Live Movie API for adaptive lookup and auto-fill."""
+    """Search movies by title using OMDb or TMDB Live Movie API for adaptive lookup and auto-fill."""
     query = q.strip().lower()
     if not query:
         return await get_trending_movies()
@@ -660,31 +660,40 @@ async def search_movies(q: str = ""):
         except Exception as e:
             logger.warning(f"TMDB search API fetch failed: {e}")
 
-    # 2. Live iTunes Movie Search API (Free, no API key required)
+    # 2. Live OMDb Movie Search API (Free, high quality, real posters & directors)
     try:
-        url = f"https://itunes.apple.com/search?term={query}&entity=movie&limit=10"
+        omdb_key = os.getenv("OMDB_API_KEY", "trilogy")
+        url = f"http://www.omdbapi.com/?apikey={omdb_key}&s={query}&type=movie"
         async with httpx.AsyncClient(timeout=4.0) as client:
             resp = await client.get(url)
             if resp.status_code == 200:
-                results = resp.json().get("results", [])
+                raw_data = resp.json()
+                results = raw_data.get("Search", [])
                 if results:
                     formatted = []
-                    for m in results:
-                        release_year = int(m.get("releaseDate", "2024")[:4]) if m.get("releaseDate") else 2024
-                        art = m.get("artworkUrl100", "").replace("100x100bb", "600x600bb")
+                    for m in results[:10]:
+                        yr = m.get("Year", "2024")
+                        try:
+                            release_year = int(yr[:4])
+                        except Exception:
+                            release_year = 2024
+                        poster = m.get("Poster")
+                        if not poster or poster == "N/A":
+                            poster = "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80"
+                        
                         formatted.append({
-                            "id": m.get("trackId"),
-                            "title": m.get("trackName"),
+                            "id": m.get("imdbID"),
+                            "title": m.get("Title"),
                             "release_year": release_year,
                             "rating": 8.5,
-                            "overview": m.get("longDescription") or m.get("shortDescription") or "Movie entry fetched live.",
-                            "poster_url": art or "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&q=80",
-                            "director": m.get("artistName", "Unknown Director"),
-                            "genre": m.get("primaryGenreName", "Cinema")
+                            "overview": f"Movie entry '{m.get('Title')}' fetched live.",
+                            "poster_url": poster,
+                            "director": "Director Track",
+                            "genre": "Cinema"
                         })
-                    return {"status": "success", "query": q, "source": "itunes-live-api", "results": formatted}
+                    return {"status": "success", "query": q, "source": "omdb-live-api", "results": formatted}
     except Exception as ex:
-        logger.warning(f"iTunes Movie Search API failed: {ex}")
+        logger.warning(f"OMDb Movie Search API failed: {ex}")
 
     # Fallback search against catalog
     filtered = [m for m in TRENDING_MOVIES_CATALOG if query in m.get("title", "").lower()]

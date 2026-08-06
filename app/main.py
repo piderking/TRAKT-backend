@@ -734,18 +734,69 @@ async def get_spotify_summary():
             if resp.status_code == 200:
                 return resp.json()
     except Exception as e:
-        logger.warning(f"Plugin Spotify unreachable: {e}. Returning fallback summary...")
+        logger.warning(f"Plugin Spotify unreachable: {e}. Fetching directly from Spotify Web API...")
+
+    spotify_access_token = os.getenv("SPOTIFY_ACCESS_TOKEN", "")
+    if spotify_access_token:
+        try:
+            headers = {"Authorization": f"Bearer {spotify_access_token}"}
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                np_resp = await client.get("https://api.spotify.com/v1/me/player/currently-playing", headers=headers)
+                rec_resp = await client.get("https://api.spotify.com/v1/me/player/recently-played?limit=10", headers=headers)
+
+                now_playing = {"track_name": "No Track Playing", "artist_name": "", "is_playing": False}
+                if np_resp.status_code == 200 and np_resp.content:
+                    np_data = np_resp.json()
+                    item = np_data.get("item") or {}
+                    artists = item.get("artists", [])
+                    imgs = item.get("album", {}).get("images", [])
+                    now_playing = {
+                        "track_name": item.get("name", "No Track Playing"),
+                        "artist_name": ", ".join(a.get("name") for a in artists) if artists else "",
+                        "album_name": item.get("album", {}).get("name", ""),
+                        "duration_ms": item.get("duration_ms", 0),
+                        "progress_ms": np_data.get("progress_ms", 0),
+                        "is_playing": np_data.get("is_playing", False),
+                        "album_art_url": imgs[0].get("url") if imgs else "",
+                        "spotify_uri": item.get("uri", "")
+                    }
+
+                history = []
+                if rec_resp.status_code == 200:
+                    for it in rec_resp.json().get("items", []):
+                        tr = it.get("track", {})
+                        art = ", ".join(a.get("name") for a in tr.get("artists", []))
+                        dur_ms = tr.get("duration_ms", 0)
+                        imgs = tr.get("album", {}).get("images", [])
+                        history.append({
+                            "track_name": tr.get("name"),
+                            "artist_name": art,
+                            "album_name": tr.get("album", {}).get("name"),
+                            "album_art_url": imgs[0].get("url") if imgs else "",
+                            "played_at": it.get("played_at", "")[:16].replace("T", " "),
+                            "duration_formatted": f"{dur_ms//60000}:{(dur_ms%60000)//1000:02d}"
+                        })
+
+                return {
+                    "source": "gateway-direct-spotify-api",
+                    "now_playing": now_playing,
+                    "stats": {"tracks_played_today": len(history), "total_listening_minutes": 0},
+                    "history": history
+                }
+        except Exception as ex:
+            logger.error(f"Direct Spotify API fetch failed: {ex}")
 
     return {
-        "source": "gateway-spotify-fallback",
+        "source": "gateway-spotify-clean-initial",
         "now_playing": {
-            "track_name": "Starboy",
-            "artist_name": "The Weeknd ft. Daft Punk",
-            "album_name": "Starboy",
-            "is_playing": True,
-            "audio_features": {"bpm": 186, "energy": 0.82}
+            "track_name": "No Track Playing",
+            "artist_name": "",
+            "album_name": "",
+            "is_playing": False,
+            "audio_features": {"bpm": 0, "energy": 0.0}
         },
-        "stats": {"tracks_played_today": 34, "total_listening_minutes": 118}
+        "stats": {"tracks_played_today": 0, "total_listening_minutes": 0},
+        "history": []
     }
 
 @app.get("/api/v1/spotify/now-playing")
@@ -759,7 +810,7 @@ async def get_spotify_now_playing():
     except Exception as e:
         logger.warning(f"Plugin Spotify unreachable: {e}")
 
-    return {"is_playing": False, "track_name": "Standby"}
+    return {"is_playing": False, "track_name": "No Track Playing", "artist_name": ""}
 
 @app.post("/api/v1/spotify/scrobble")
 async def scrobble_spotify_track(payload: Dict[str, Any] = Body(...)):

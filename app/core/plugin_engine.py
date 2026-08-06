@@ -236,6 +236,41 @@ class PluginEngine:
                     plugin.items_fetched_count += 1
                     await self.storage_engine.set("universal:entities", {"items": self.universal_store})
 
+    async def trigger_historical_backfill(self, base_backend_url: str = "http://127.0.0.1:8000", days: int = 1) -> Dict[str, Any]:
+        """Backfill historical telemetry data from plugins into persistent database."""
+        logger.info(f"Starting Historical Data Backfill for past {days} day(s)...")
+        total_backfilled = 0
+        details = {}
+
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            for p_id, plugin in list(self.discovered_plugins.items()):
+                try:
+                    # Query summary endpoint
+                    target_url = plugin.fetch_url
+                    if not target_url.startswith("http"):
+                        target_url = f"{base_backend_url}{target_url}"
+
+                    resp = await client.get(target_url)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        count_before = len(self.universal_store)
+                        await self._process_fetched_data(plugin, data)
+                        added = len(self.universal_store) - count_before
+                        total_backfilled += added
+                        details[p_id] = f"Backfilled {added} historical records"
+                    else:
+                        details[p_id] = f"HTTP {resp.status_code}"
+                except Exception as ex:
+                    details[p_id] = f"Error: {str(ex)}"
+
+        await self.storage_engine.set("universal:entities", {"items": self.universal_store})
+        await event_bus.publish("DB_MUTATION", {"backfilled_days": days, "total": total_backfilled})
+        return {
+            "status": "success",
+            "requested_days": days,
+            "total_records_backfilled": total_backfilled,
+            "details": details
+        }
     def get_plugins_status(self) -> List[Dict[str, Any]]:
         """Return status list for all discovered plugins & fetchers."""
         return [

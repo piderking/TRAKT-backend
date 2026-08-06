@@ -24,6 +24,7 @@ class DynamicPlugin:
         self.last_fetch_time: Optional[float] = None
         self.last_fetch_status: str = "initialized"
         self.items_fetched_count: int = 0
+        self.last_interaction: Optional[Dict[str, Any]] = None
 
 class PluginEngine:
     """
@@ -267,7 +268,10 @@ class PluginEngine:
                     if not target_url.startswith("http"):
                         target_url = f"{base_backend_url}{target_url}"
 
+                    start_t = time.time()
                     resp = await client.get(target_url)
+                    latency_ms = round((time.time() - start_t) * 1000, 1)
+
                     if resp.status_code == 200:
                         data = resp.json()
                         count_before = len(self.universal_store)
@@ -275,6 +279,15 @@ class PluginEngine:
                         added = len(self.universal_store) - count_before
                         total_backfilled += added
                         details[p_id] = f"Backfilled {added} historical records"
+                        plugin.last_interaction = {
+                            "target_url": target_url,
+                            "method": "GET",
+                            "status_code": 200,
+                            "latency_ms": latency_ms,
+                            "timestamp": time.time(),
+                            "time_str": time.strftime("%H:%M:%S"),
+                            "response_preview": data
+                        }
                         self.add_log(p_id, "INFO", f"Historical backfill inserted {added} records into DB")
                     else:
                         details[p_id] = f"HTTP {resp.status_code}"
@@ -305,6 +318,7 @@ class PluginEngine:
                 "last_fetch_time": p.last_fetch_time,
                 "last_fetch_status": p.last_fetch_status,
                 "items_fetched_count": p.items_fetched_count,
+                "last_interaction": p.last_interaction,
                 "schema": p.schema,
                 "tags": p.tags
             }

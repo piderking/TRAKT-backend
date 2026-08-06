@@ -1,8 +1,11 @@
 import os
 import time
 import logging
+import io
+import csv
+import zipfile
 from contextlib import asynccontextmanager
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from fastapi import FastAPI, HTTPException, Depends, Body, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -393,23 +396,117 @@ async def get_letterboxd_import_summary():
         "stats": {"total_imports": 1, "movies_watched": 428, "ratings": 312, "diary_entries": 185, "watchlist": 94}
     }
 
+def parse_letterboxd_csv_bytes(content_bytes: bytes, filename: str) -> List[Dict[str, Any]]:
+    """Parse Letterboxd CSV bytes with UTF-8 BOM handling and flexible column mapping."""
+    try:
+        text = content_bytes.decode("utf-8-sig", errors="ignore")
+    except Exception:
+        text = content_bytes.decode("latin-1", errors="ignore")
+
+    reader = csv.DictReader(io.StringIO(text))
+    rows = []
+    for raw_row in reader:
+        clean_row = {}
+        for k, v in raw_row.items():
+            if k is not None:
+                clean_k = k.strip().lstrip('\ufeff')
+                clean_row[clean_k] = v.strip() if v else ""
+
+        title = clean_row.get("Name") or clean_row.get("Title") or clean_row.get("Film") or ""
+        year = clean_row.get("Year") or clean_row.get("Release Year") or "2024"
+        date_watched = clean_row.get("Date") or clean_row.get("Watched Date") or time.strftime("%Y-%m-%d")
+        rating_raw = clean_row.get("Rating") or ""
+        uri = clean_row.get("Letterboxd URI") or clean_row.get("URI") or clean_row.get("URL") or ""
+        rewatch = clean_row.get("Rewatch") or ""
+        review = clean_row.get("Review") or ""
+        tags = clean_row.get("Tags") or ""
+
+        rating_num = 8.0
+        if rating_raw:
+            try:
+                r_val = float(rating_raw)
+                rating_num = r_val * 2.0 if r_val <= 5.0 else r_val
+            except ValueError:
+                rating_num = 8.0
+
+        if title:
+            rows.append({
+                "id": f"lb_{len(rows)+1}_{int(time.time())}",
+                "movie_title": title,
+                "release_year": int(year) if str(year).isdigit() else 2024,
+                "watched_date": date_watched,
+                "rating": rating_num,
+                "is_rewatch": rewatch.lower() in ["yes", "true", "1", "r"],
+                "liked": rating_num >= 8.0,
+                "review": review,
+                "tags": [t.strip() for t in tags.split(",") if t.strip()],
+                "letterboxd_uri": uri,
+                "poster_url": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80"
+            })
+    return rows
+
 @app.post("/api/v1/import/letterboxd")
 async def upload_letterboxd_zip_export(file: UploadFile = File(...)):
-    """Proxy Letterboxd zip export upload to Letterboxd microservice plugin."""
+    """Parse Letterboxd zip export (watched.csv, ratings.csv, diary.csv, watchlist.csv) and auto-populate movie diary."""
+    global movie_diary_store
+    filename = file.filename or "letterboxd-export.zip"
+    content = await file.read()
+
+    # Try microservice first
     try:
-        content = await file.read()
-        files_payload = {"file": (file.filename or "letterboxd.zip", content, file.content_type or "application/zip")}
+        files_payload = {"file": (filename, content, file.content_type or "application/zip")}
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(f"{PLUGIN_LETTERBOXD_URL}/import/upload", files=files_payload)
             if resp.status_code == 200:
-                return resp.json()
+                res_data = resp.json()
+                if res_data.get("watched_count", 0) > 0 or res_data.get("ratings_count", 0) > 0:
+                    return res_data
     except Exception as e:
-        logger.warning(f"Plugin Letterboxd unreachable during zip upload: {e}")
+        logger.warning(f"Plugin Letterboxd unreachable: {e}. Parsing zip directly in gateway...")
+
+    # Direct Zip Parsing in Gateway
+    watched_items, ratings_items, diary_items, watchlist_items = [], [], [], []
+    if filename.endswith(".zip"):
+        try:
+            with zipfile.ZipFile(io.BytesIO(content)) as zf:
+                for name in zf.namelist():
+                    lower_name = name.lower()
+                    file_bytes = zf.read(name)
+                    if lower_name.endswith("watched.csv"):
+                        watched_items = parse_letterboxd_csv_bytes(file_bytes, name)
+                    elif lower_name.endswith("ratings.csv"):
+                        ratings_items = parse_letterboxd_csv_bytes(file_bytes, name)
+                    elif lower_name.endswith("diary.csv"):
+                        diary_items = parse_letterboxd_csv_bytes(file_bytes, name)
+                    elif lower_name.endswith("watchlist.csv"):
+                        watchlist_items = parse_letterboxd_csv_bytes(file_bytes, name)
+        except Exception as err:
+            raise HTTPException(status_code=400, detail=f"Failed to extract Letterboxd zip archive: {str(err)}")
+    elif filename.endswith(".csv"):
+        watched_items = parse_letterboxd_csv_bytes(content, filename)
+
+    # Ingest into movie_diary_store
+    all_imported = diary_items or watched_items or ratings_items
+    for item in all_imported:
+        # Avoid duplicate titles if already logged
+        if not any(existing.get("movie_title") == item.get("movie_title") for existing in movie_diary_store):
+            movie_diary_store.append(item)
+
+    w_cnt = len(watched_items) or len(all_imported)
+    r_cnt = len(ratings_items)
+    d_cnt = len(diary_items)
+    wl_cnt = len(watchlist_items)
 
     return {
         "status": "success",
-        "source": "gateway-fallback-import",
-        "message": f"Received '{file.filename}' for Letterboxd import processing."
+        "source": "gateway-direct-zip-ingest",
+        "filename": filename,
+        "watched_count": w_cnt,
+        "ratings_count": r_cnt,
+        "diary_count": d_cnt,
+        "watchlist_count": wl_cnt,
+        "total_imported": len(all_imported),
+        "message": f"Successfully imported {len(all_imported)} movies from '{filename}' into Trakt Diary."
     }
 
 # --- Letterboxd-Style Movie Logger & Diary Endpoints ---
